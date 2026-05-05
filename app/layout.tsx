@@ -7,7 +7,20 @@ const inter = Inter({
   variable: "--font-inter"
 });
 
+function getMetadataBase() {
+  const rawUrl =
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+  try {
+    return new URL(rawUrl);
+  } catch {
+    return new URL("http://localhost:3000");
+  }
+}
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: "Office Tracker",
   description: "Office day tracker with calendar, summaries, and authentication."
 };
