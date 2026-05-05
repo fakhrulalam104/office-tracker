@@ -1,0 +1,272 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { COMMENT_MAX_LENGTH, clamp, dayStatusLabel, formatDateLabel, normalizeDayStatus } from "@/lib/utils";
+import type { DayStatus, EntryItem } from "@/types";
+
+const presets = [0, 10, 20, 30, 45, 60, 90];
+const statusOrder: DayStatus[] = ["work", "holiday", "sick", "leave"];
+
+export function DayModal({
+  open,
+  dateKey,
+  entry,
+  saving,
+  onClose,
+  onSave,
+  onDelete
+}: {
+  open: boolean;
+  dateKey: string | null;
+  entry?: EntryItem;
+  saving: boolean;
+  onClose: () => void;
+  onSave: (data: { delayMinutes: number; hadLunch: boolean; dayStatus: DayStatus; comment: string }) => Promise<void> | void;
+  onDelete: () => Promise<void> | void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<number | null>(0);
+  const [customMinutes, setCustomMinutes] = useState("");
+  const [hadLunch, setHadLunch] = useState(false);
+  const [dayStatus, setDayStatus] = useState<DayStatus>("work");
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    setMounted(open);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const currentStatus = normalizeDayStatus(entry?.dayStatus);
+    const currentMinutes = currentStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
+    const matchedPreset = presets.includes(currentMinutes) ? currentMinutes : null;
+
+    setDayStatus(currentStatus);
+    setSelectedPreset(matchedPreset);
+    setCustomMinutes(matchedPreset === null && currentMinutes > 0 ? String(currentMinutes) : "");
+    setHadLunch(currentStatus === "work" ? Boolean(entry?.hadLunch) : false);
+    setComment(currentStatus !== "work" ? entry?.comment ?? "" : "");
+  }, [entry, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [onClose, open]);
+
+  const dateTitle = useMemo(() => (dateKey ? formatDateLabel(dateKey) : "Select a day"), [dateKey]);
+  const isWorkDay = dayStatus === "work";
+  const activeMinutes = customMinutes !== "" ? clamp(Number(customMinutes || 0), 0, 480) : selectedPreset ?? 0;
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className={`fixed inset-0 z-50 flex items-center justify-center px-4 transition ${mounted ? "opacity-100" : "opacity-0"}`}>
+      <button
+        type="button"
+        className="absolute inset-0 bg-slate-950/25 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label="Close modal backdrop"
+      />
+
+      <div
+        className={`relative z-10 w-full max-w-2xl rounded-3xl bg-white p-6 shadow-soft transition duration-150 ease-out sm:p-8 ${
+          mounted ? "scale-100 opacity-100" : "scale-95 opacity-0"
+        }`}
+      >
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Day Details</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{dateTitle}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-semibold text-slate-900">Day type</p>
+          <p className="mt-1 text-sm text-slate-500">Pick the status that best matches this day.</p>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {statusOrder.map((value) => {
+              const active = dayStatus === value;
+              const activeClass =
+                value === "work"
+                  ? "border-indigo-500 bg-indigo-500 text-white shadow-sm"
+                  : value === "holiday"
+                    ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                    : value === "sick"
+                      ? "border-violet-500 bg-violet-500 text-white shadow-sm"
+                      : "border-slate-700 bg-slate-700 text-white shadow-sm";
+
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDayStatus(value)}
+                  className={`rounded-2xl border px-4 py-3 text-left text-sm font-medium transition ${
+                    active ? activeClass : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="block">{dayStatusLabel(value)}</span>
+                  <span className={`mt-1 block text-xs ${active ? "text-white/80" : "text-slate-500"}`}>
+                    {value === "work"
+                      ? "Regular office day"
+                      : value === "holiday"
+                        ? "Public or company holiday"
+                        : value === "sick"
+                          ? "Sick leave"
+                          : "Leave for other reason"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {isWorkDay ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">Late arrival delay</p>
+              <p className="mt-1 text-sm text-slate-500">Pick a preset or enter a custom value.</p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {presets.map((minute) => {
+                  const active = customMinutes === "" && selectedPreset === minute;
+                  return (
+                    <button
+                      key={minute}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPreset(minute);
+                        setCustomMinutes("");
+                      }}
+                      className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
+                        active
+                          ? "border-indigo-500 bg-indigo-500 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-indigo-200 hover:text-indigo-600"
+                      }`}
+                    >
+                      {minute}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="mt-5 block">
+                <span className="text-sm font-medium text-slate-700">Custom minutes</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={480}
+                  placeholder="Enter minutes"
+                  value={customMinutes}
+                  onChange={(event) => {
+                    setCustomMinutes(event.target.value);
+                    setSelectedPreset(null);
+                  }}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </label>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-semibold text-slate-900">Lunch</p>
+              <label className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <input
+                  type="checkbox"
+                  checked={hadLunch}
+                  onChange={(event) => setHadLunch(event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <p className="text-sm font-medium text-slate-800">Had office lunch today? (+90 BDT)</p>
+                  <p className="mt-1 text-sm text-slate-500">90 BDT will be added to your monthly spend.</p>
+                </div>
+              </label>
+
+              <div className="mt-6 rounded-2xl bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+                Selected delay: <span className="font-semibold">{activeMinutes} min</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+            <p className="font-semibold">{dayStatusLabel(dayStatus)} selected</p>
+            <p>Delay and lunch are disabled for time off days and will be cleared when you save.</p>
+            <label className="block rounded-2xl border border-emerald-200 bg-white/80 p-4 text-slate-700">
+              <span className="block text-sm font-medium text-slate-800">Comment for time off</span>
+              <textarea
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                maxLength={COMMENT_MAX_LENGTH}
+                rows={4}
+                placeholder="Add a note about this leave day"
+                className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+              <span className="mt-2 block text-xs text-slate-500">
+                Optional. This helps explain why the day was marked as holiday, sick, or leave.
+              </span>
+            </label>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => void onDelete()}
+            disabled={!entry || saving}
+            className="rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-500 transition disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Clear Day
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                void onSave({
+                  delayMinutes: isWorkDay ? activeMinutes : 0,
+                  hadLunch: isWorkDay ? hadLunch : false,
+                  dayStatus,
+                  comment: dayStatus !== "work" ? comment.trim() : ""
+                })
+              }
+              disabled={saving}
+              className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
