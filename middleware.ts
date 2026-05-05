@@ -8,6 +8,8 @@ const protectedApiPrefixes = ["/api/entries", "/api/summary"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isSecureRequest =
+    request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
   const isProtectedRoute = protectedRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   const isProtectedApi = protectedApiPrefixes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
@@ -15,7 +17,9 @@ export async function middleware(request: NextRequest) {
     pathname,
     isProtectedRoute,
     isProtectedApi,
+    isSecureRequest,
     host: request.headers.get("host"),
+    forwardedProto: request.headers.get("x-forwarded-proto"),
     authSecretSource: getAuthSecretSource()
   });
 
@@ -26,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
   let token: Awaited<ReturnType<typeof getToken>>;
   try {
-    token = await getToken({ req: request, secret: getAuthSecret() });
+    token = await getToken({ req: request, secret: getAuthSecret(), secureCookie: isSecureRequest });
     authDebug("middleware.token-result", {
       pathname,
       hasToken: Boolean(token),
