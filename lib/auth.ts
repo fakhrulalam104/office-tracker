@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
+import { getAuthSecret } from "@/lib/auth-env";
 
 const sessionMaxAge = 30 * 24 * 60 * 60;
 
@@ -72,5 +73,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     }
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: getAuthSecret()
 });

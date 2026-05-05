@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getMetadataBaseUrl } from "@/lib/auth-env";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,12 +9,8 @@ const inter = Inter({
 });
 
 function getMetadataBase() {
-  const rawUrl =
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-
   try {
-    return new URL(rawUrl);
+    return new URL(getMetadataBaseUrl());
   } catch {
     return new URL("http://localhost:3000");
   }
