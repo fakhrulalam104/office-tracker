@@ -1,5 +1,5 @@
 export function getAuthSecret() {
-  return process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+  return process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? process.env.MONGODB_URI;
 }
 
 export function getAuthUrl() {

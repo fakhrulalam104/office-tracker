@@ -41,17 +41,23 @@ export function LoginForm({ registered }: { registered: boolean }) {
     const result = await signIn("credentials", {
       email,
       password,
+      redirectTo: "/dashboard",
       redirect: false
     });
 
     setPending(false);
 
     if (result?.error) {
-      setErrors({ form: "Invalid email or password." });
+      setErrors({
+        form:
+          result.error === "Configuration"
+            ? "Sign-in is not configured correctly on the server. Check the Vercel auth secret."
+            : "Invalid email or password."
+      });
       return;
     }
 
-    router.push("/dashboard");
+    router.push(result?.url ?? "/dashboard");
     router.refresh();
   }
 
