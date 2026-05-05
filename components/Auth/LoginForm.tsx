@@ -4,12 +4,28 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState, type FormEvent } from "react";
+import { maskEmail } from "@/lib/auth-debug";
 
 type Errors = {
   email?: string;
   password?: string;
   form?: string;
 };
+
+function createFlowId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function loginDebug(step: string, details: Record<string, unknown> = {}) {
+  console.info(`[office-auth:client] ${step}`, {
+    at: new Date().toISOString(),
+    ...details
+  });
+}
 
 export function LoginForm({ registered }: { registered: boolean }) {
   const router = useRouter();
@@ -20,9 +36,18 @@ export function LoginForm({ registered }: { registered: boolean }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const flowId = createFlowId();
     const nextErrors: Errors = {};
+    const normalizedEmail = email.toLowerCase().trim();
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    loginDebug("login.submit-start", {
+      flowId,
+      email: maskEmail(normalizedEmail),
+      hasPassword: Boolean(password),
+      location: window.location.href
+    });
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       nextErrors.email = "Enter a valid email address.";
     }
 
@@ -31,6 +56,10 @@ export function LoginForm({ registered }: { registered: boolean }) {
     }
 
     if (Object.keys(nextErrors).length > 0) {
+      loginDebug("login.validation-failed", {
+        flowId,
+        fields: Object.keys(nextErrors)
+      });
       setErrors(nextErrors);
       return;
     }
@@ -38,27 +67,61 @@ export function LoginForm({ registered }: { registered: boolean }) {
     setPending(true);
     setErrors({});
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirectTo: "/dashboard",
-      redirect: false
-    });
-
-    setPending(false);
-
-    if (result?.error) {
-      setErrors({
-        form:
-          result.error === "Configuration"
-            ? "Sign-in is not configured correctly on the server. Check the Vercel auth secret."
-            : "Invalid email or password."
+    try {
+      loginDebug("login.signin-call-start", {
+        flowId,
+        email: maskEmail(normalizedEmail)
       });
-      return;
-    }
 
-    router.push(result?.url ?? "/dashboard");
-    router.refresh();
+      const result = await signIn("credentials", {
+        email: normalizedEmail,
+        password,
+        flowId,
+        redirectTo: "/dashboard",
+        redirect: false
+      });
+
+      loginDebug("login.signin-call-result", {
+        flowId,
+        status: result?.status ?? null,
+        ok: result?.ok ?? null,
+        error: result?.error ?? null,
+        code: result?.code ?? null,
+        url: result?.url ?? null
+      });
+
+      setPending(false);
+
+      if (result?.error) {
+        loginDebug("login.signin-error-shown", {
+          flowId,
+          error: result.error,
+          code: result.code ?? null
+        });
+        setErrors({
+          form:
+            result.error === "Configuration"
+              ? "Sign-in is not configured correctly on the server. Check the Vercel auth secret."
+              : "Invalid email or password."
+        });
+        return;
+      }
+
+      loginDebug("login.redirect-dashboard", {
+        flowId,
+        url: result?.url ?? "/dashboard"
+      });
+
+      router.push(result?.url ?? "/dashboard");
+      router.refresh();
+    } catch (error) {
+      loginDebug("login.signin-exception", {
+        flowId,
+        message: error instanceof Error ? error.message : String(error)
+      });
+      setPending(false);
+      setErrors({ form: "Could not reach the sign-in server. Check the browser console and Vercel logs." });
+    }
   }
 
   return (

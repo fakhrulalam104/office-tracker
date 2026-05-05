@@ -3,7 +3,8 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
-import { getAuthSecret } from "@/lib/auth-env";
+import { getAuthSecret, getAuthSecretSource } from "@/lib/auth-env";
+import { authDebug, authDebugError } from "@/lib/auth-debug";
 
 const sessionMaxAge = 30 * 24 * 60 * 60;
 
@@ -19,6 +20,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/login"
   },
+  debug: true,
+  logger: {
+    error(error) {
+      authDebugError("nextauth.error", error);
+    },
+    warn(code) {
+      authDebug("nextauth.warn", { code });
+    },
+    debug(message, metadata) {
+      authDebug("nextauth.debug", { message, metadata });
+    }
+  },
   providers: [
     Credentials({
       name: "Credentials",
@@ -27,48 +40,124 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const email = typeof credentials?.email === "string" ? credentials.email.toLowerCase().trim() : "";
-        const password = typeof credentials?.password === "string" ? credentials.password : "";
+        const payload = credentials as Partial<Record<"email" | "password" | "flowId", unknown>> | undefined;
+        const email = typeof payload?.email === "string" ? payload.email.toLowerCase().trim() : "";
+        const password = typeof payload?.password === "string" ? payload.password : "";
+        const flowId = typeof payload?.flowId === "string" ? payload.flowId : "missing-flow-id";
+
+        authDebug("authorize.start", {
+          flowId,
+          email,
+          hasEmail: Boolean(email),
+          hasPassword: Boolean(password),
+          authSecretSource: getAuthSecretSource(),
+          nodeEnv: process.env.NODE_ENV
+        });
 
         if (!email || !password) {
+          authDebug("authorize.invalid-input", {
+            flowId,
+            email,
+            hasEmail: Boolean(email),
+            hasPassword: Boolean(password)
+          });
           return null;
         }
 
-        await connectToDatabase();
-        const user = await User.findOne({ email });
+        try {
+          authDebug("authorize.db-connect-start", { flowId, email });
+          await connectToDatabase();
+          authDebug("authorize.db-connect-success", { flowId, email });
 
-        if (!user) {
-          return null;
+          authDebug("authorize.user-lookup-start", { flowId, email });
+          const user = await User.findOne({ email });
+          authDebug("authorize.user-lookup-result", {
+            flowId,
+            email,
+            foundUser: Boolean(user),
+            userId: user?._id?.toString() ?? null,
+            hasPasswordHash: Boolean(user?.password)
+          });
+
+          if (!user) {
+            authDebug("authorize.user-missing", { flowId, email });
+            return null;
+          }
+
+          authDebug("authorize.password-compare-start", {
+            flowId,
+            email,
+            userId: user._id.toString()
+          });
+          const matches = await bcrypt.compare(password, user.password);
+          authDebug("authorize.password-compare-result", {
+            flowId,
+            email,
+            userId: user._id.toString(),
+            matches
+          });
+
+          if (!matches) {
+            return null;
+          }
+
+          authDebug("authorize.success", {
+            flowId,
+            email,
+            userId: user._id.toString()
+          });
+
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email
+          };
+        } catch (error) {
+          authDebugError("authorize.exception", error, { flowId, email });
+          throw error;
         }
-
-        const matches = await bcrypt.compare(password, user.password);
-        if (!matches) {
-          return null;
-        }
-
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email
-        };
       }
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      authDebug("jwt.callback-start", {
+        trigger,
+        hasUser: Boolean(user),
+        incomingUserId: user?.id ?? null,
+        tokenHasUserId: Boolean(token.userId)
+      });
+
       if (user) {
         token.userId = user.id;
         token.name = user.name;
       }
 
+      authDebug("jwt.callback-complete", {
+        trigger,
+        tokenHasUserId: Boolean(token.userId),
+        tokenEmail: token.email ?? null
+      });
+
       return token;
     },
     async session({ session, token }) {
+      authDebug("session.callback-start", {
+        hasSessionUser: Boolean(session.user),
+        tokenHasUserId: Boolean(token.userId),
+        tokenEmail: token.email ?? null
+      });
+
       if (session.user) {
         session.user.id = token.userId ?? "";
         session.user.name = token.name ?? session.user.name ?? null;
         session.user.email = token.email ?? session.user.email ?? null;
       }
+
+      authDebug("session.callback-complete", {
+        hasSessionUserId: Boolean(session.user?.id),
+        sessionEmail: session.user?.email ?? null
+      });
 
       return session;
     }

@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
+import { authDebug, authDebugError } from "@/lib/auth-debug";
 
 export const runtime = "nodejs";
 
@@ -34,20 +35,37 @@ function validateRegistration(body: unknown) {
 
 export async function POST(request: Request) {
   try {
+    authDebug("register.request-start", {
+      url: request.url
+    });
+
     const body = await request.json();
     const { valid, errors, payload } = validateRegistration(body);
+    const email = payload?.email?.toLowerCase().trim() ?? "";
+
+    authDebug("register.validation-result", {
+      email,
+      valid,
+      errorFields: Object.keys(errors)
+    });
 
     if (!valid) {
       return NextResponse.json({ message: "Validation failed", fieldErrors: errors }, { status: 400 });
     }
 
     const name = payload.name!.trim();
-    const email = payload.email!.toLowerCase().trim();
     const password = payload.password!;
 
+    authDebug("register.db-connect-start", { email });
     await connectToDatabase();
+    authDebug("register.db-connect-success", { email });
 
     const existingUser = await User.findOne({ email }).lean();
+    authDebug("register.existing-user-check", {
+      email,
+      exists: Boolean(existingUser)
+    });
+
     if (existingUser) {
       return NextResponse.json(
         { message: "Email already exists", fieldErrors: { email: "This email is already registered." } },
@@ -56,14 +74,25 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    await User.create({
+    authDebug("register.password-hashed", {
+      email,
+      hashLength: hashedPassword.length
+    });
+
+    const user = await User.create({
       name,
       email,
       password: hashedPassword
     });
 
+    authDebug("register.user-created", {
+      email,
+      userId: user._id.toString()
+    });
+
     return NextResponse.json({ message: "Account created successfully" }, { status: 201 });
   } catch (error) {
+    authDebugError("register.exception", error);
     return NextResponse.json(
       {
         message: "Server error",
