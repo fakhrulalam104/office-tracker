@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { UserRole } from "@/types";
 import { canManageTeam, getDefaultHomePath } from "@/lib/roles";
 
@@ -170,12 +170,33 @@ const adminNavItems = [
 export function AppShell({ userName, role = "member", children }: { userName: string; role?: UserRole; children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const visibleNavItems =
     role === "super_admin"
       ? adminNavItems
       : canManageTeam(role)
         ? [...trackingNavItems, ...adminNavItems]
         : trackingNavItems;
+
+  useEffect(() => {
+    if (!pendingHref) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPendingHref(null);
+    }, 320);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pathname, pendingHref]);
+
+  function startNavigationFeedback(href: string) {
+    if (href === pathname || pathname.startsWith(`${href}/`)) {
+      return;
+    }
+
+    setPendingHref(href);
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
@@ -186,7 +207,11 @@ export function AppShell({ userName, role = "member", children }: { userName: st
       >
         <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:flex-col lg:items-stretch lg:gap-5 lg:p-5">
           <div className={`flex items-center gap-3 ${collapsed ? "lg:flex-col lg:justify-center" : "lg:justify-between"}`}>
-            <Link href={getDefaultHomePath(role)} className={`flex min-w-0 items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}>
+            <Link
+              href={getDefaultHomePath(role)}
+              onClick={() => startNavigationFeedback(getDefaultHomePath(role))}
+              className={`flex min-w-0 items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}
+            >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-sm font-black text-slate-950">
                 <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-950" />
               </span>
@@ -216,6 +241,7 @@ export function AppShell({ userName, role = "member", children }: { userName: st
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => startNavigationFeedback(item.href)}
                   className={`flex shrink-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition lg:w-full ${
                     active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"
                   }`}
@@ -249,7 +275,24 @@ export function AppShell({ userName, role = "member", children }: { userName: st
         </div>
       </aside>
 
-      <section className="min-w-0">{children}</section>
+      <section className="min-w-0">
+        <div
+          className={`pointer-events-none sticky top-0 z-50 transition-opacity duration-200 ${
+            pendingHref ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={pendingHref ? "false" : "true"}
+        >
+          <div className="h-1 w-full overflow-hidden bg-sky-100/90">
+            <div className="navigation-progress h-full w-1/3 rounded-r-full bg-sky-500" />
+          </div>
+          <div className="flex justify-end px-4 pt-3 lg:px-8">
+            <div className="rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm backdrop-blur">
+              Loading page...
+            </div>
+          </div>
+        </div>
+        {children}
+      </section>
     </main>
   );
 }
