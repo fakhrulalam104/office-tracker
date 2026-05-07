@@ -179,15 +179,9 @@ export function AppShell({ userName, role = "member", children }: { userName: st
         : trackingNavItems;
 
   useEffect(() => {
-    if (!pendingHref) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
+    if (pendingHref) {
       setPendingHref(null);
-    }, 320);
-
-    return () => window.clearTimeout(timeoutId);
+    }
   }, [pathname, pendingHref]);
 
   function startNavigationFeedback(href: string) {
