@@ -2,7 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
-import { clamp, isTimeOffStatus, monthBounds, normalizeComment, normalizeDayStatus, parseDateKey, parseMonthKey } from "@/lib/utils";
+import {
+  clamp,
+  isTimeOffStatus,
+  monthBounds,
+  normalizeComment,
+  normalizeDailyExpenses,
+  normalizeDayStatus,
+  parseDateKey,
+  parseMonthKey,
+  totalDailyExpenses
+} from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -15,6 +25,7 @@ function toEntryResponse(entry: any) {
     hadLunch: entry.hadLunch,
     dayStatus,
     comment: normalizeComment(entry.comment),
+    dailyExpenses: normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote),
     createdAt: entry.createdAt?.toISOString(),
     updatedAt: entry.updatedAt?.toISOString()
   };
@@ -75,6 +86,9 @@ export async function POST(request: Request) {
     const delayMinutes = isTimeOffStatus(dayStatus) ? 0 : clamp(Number(body?.delayMinutes ?? 0), 0, 480);
     const hadLunch = isTimeOffStatus(dayStatus) ? false : Boolean(body?.hadLunch);
     const comment = isTimeOffStatus(dayStatus) ? normalizeComment(body?.comment) : "";
+    const dailyExpenses = normalizeDailyExpenses(body?.dailyExpenses, body?.dailyExpenseAmount, body?.dailyExpenseNote);
+    const dailyExpenseAmount = totalDailyExpenses(dailyExpenses);
+    const dailyExpenseNote = dailyExpenses[0]?.note ?? "";
 
     if (!date) {
       return NextResponse.json({ message: "Invalid date" }, { status: 400 });
@@ -88,6 +102,9 @@ export async function POST(request: Request) {
       existingEntry.hadLunch = hadLunch;
       existingEntry.dayStatus = dayStatus;
       existingEntry.comment = comment;
+      existingEntry.dailyExpenseAmount = dailyExpenseAmount;
+      existingEntry.dailyExpenseNote = dailyExpenseNote;
+      existingEntry.dailyExpenses = dailyExpenses;
       await existingEntry.save();
 
       return NextResponse.json({ entry: toEntryResponse(existingEntry), created: false });
@@ -99,7 +116,10 @@ export async function POST(request: Request) {
       delayMinutes,
       hadLunch,
       dayStatus,
-      comment
+      comment,
+      dailyExpenseAmount,
+      dailyExpenseNote,
+      dailyExpenses
     });
 
     return NextResponse.json({ entry: toEntryResponse(entry), created: true }, { status: 201 });

@@ -1,5 +1,11 @@
 export type DayStatus = "work" | "holiday" | "sick" | "leave";
 
+export type DailyExpenseItem = {
+  id: string;
+  amount: number;
+  note: string;
+};
+
 export type EntryItem = {
   id: string;
   date: string;
@@ -7,6 +13,7 @@ export type EntryItem = {
   hadLunch: boolean;
   dayStatus: DayStatus;
   comment?: string;
+  dailyExpenses: DailyExpenseItem[];
   createdAt?: string;
   updatedAt?: string;
 };

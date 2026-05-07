@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
-import { LUNCH_PRICE, isTimeOffStatus, monthBounds, normalizeDayStatus, parseMonthKey } from "@/lib/utils";
+import { LUNCH_PRICE, countHolidayDaysForMonth, isTimeOffStatus, monthBounds, normalizeDayStatus, parseMonthKey } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const workEntries = entries.filter((entry) => !isTimeOffStatus(entry.dayStatus));
     const totalDelayMinutes = workEntries.reduce((total, entry) => total + (entry.delayMinutes ?? 0), 0);
     const lunchDays = workEntries.filter((entry) => entry.hadLunch).length;
-    const holidayDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "holiday").length;
+    const holidayDays = countHolidayDaysForMonth(month, entries);
     const sickDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "sick").length;
     const leaveDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "leave").length;
     const lunchSpend = lunchDays * LUNCH_PRICE;

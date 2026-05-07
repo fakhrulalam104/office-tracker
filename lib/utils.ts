@@ -1,8 +1,9 @@
-import type { DayStatus } from "@/types";
+import type { DailyExpenseItem, DayStatus } from "@/types";
 
 export const LUNCH_PRICE = 90;
 export const MONTH_DELAY_LIMIT = 150;
 export const COMMENT_MAX_LENGTH = 500;
+export const DAILY_EXPENSE_NOTE_MAX_LENGTH = 300;
 export const DAY_STATUSES: DayStatus[] = ["work", "holiday", "sick", "leave"];
 
 export function pad2(value: number) {
@@ -94,6 +95,46 @@ export function formatDateLabel(dateKey: string) {
   }).format(date);
 }
 
+export function isSundayDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (!year || !month || !day) {
+    return false;
+  }
+
+  return new Date(year, month - 1, day).getDay() === 0;
+}
+
+export function defaultDayStatusForDate(dateKey: string): DayStatus {
+  return isSundayDateKey(dateKey) ? "holiday" : "work";
+}
+
+export function countHolidayDaysForMonth(monthKey: string, entries: unknown[]) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const entryMap = new Map(
+    entries.flatMap((entry) => {
+      if (!entry || typeof entry !== "object" || !("date" in entry) || typeof entry.date !== "string") {
+        return [];
+      }
+
+      return [[entry.date, { dayStatus: "dayStatus" in entry ? entry.dayStatus : undefined }]];
+    })
+  );
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let holidayDays = 0;
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dateKey = toDateKey(new Date(year, month - 1, day));
+    const entry = entryMap.get(dateKey);
+    const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey);
+
+    if (dayStatus === "holiday") {
+      holidayDays += 1;
+    }
+  }
+
+  return holidayDays;
+}
+
 export function getFineState(totalDelayMinutes: number) {
   if (totalDelayMinutes >= 150) {
     return {
@@ -164,4 +205,58 @@ export function normalizeComment(value: unknown) {
   }
 
   return value.trim().slice(0, COMMENT_MAX_LENGTH);
+}
+
+export function normalizeDailyExpenseAmount(value: unknown) {
+  const amount = Number(value ?? 0);
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return clamp(amount, 0, 1_000_000);
+}
+
+export function normalizeDailyExpenseNote(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().slice(0, DAILY_EXPENSE_NOTE_MAX_LENGTH);
+}
+
+function readObjectValue(value: unknown, key: string) {
+  if (!value || typeof value !== "object" || !(key in value)) {
+    return undefined;
+  }
+
+  return (value as Record<string, unknown>)[key];
+}
+
+export function normalizeDailyExpenses(value: unknown, legacyAmount?: unknown, legacyNote?: unknown): DailyExpenseItem[] {
+  const items = Array.isArray(value)
+    ? value.flatMap((item, index) => {
+        const amount = normalizeDailyExpenseAmount(readObjectValue(item, "amount"));
+        const note = normalizeDailyExpenseNote(readObjectValue(item, "note"));
+        const rawId = readObjectValue(item, "id") ?? readObjectValue(item, "_id");
+        const id = typeof rawId === "string" && rawId.trim() ? rawId.trim() : `expense-${index + 1}`;
+
+        if (amount <= 0 && !note) {
+          return [];
+        }
+
+        return [{ id, amount, note }];
+      })
+    : [];
+
+  if (items.length > 0) {
+    return items.slice(0, 50);
+  }
+
+  const amount = normalizeDailyExpenseAmount(legacyAmount);
+  const note = normalizeDailyExpenseNote(legacyNote);
+  return amount > 0 || note ? [{ id: "legacy-expense", amount, note }] : [];
+}
+
+export function totalDailyExpenses(expenses: DailyExpenseItem[]) {
+  return expenses.reduce((total, expense) => total + normalizeDailyExpenseAmount(expense.amount), 0);
 }

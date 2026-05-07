@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
-import { clamp, isTimeOffStatus, normalizeComment, normalizeDayStatus, parseDateKey } from "@/lib/utils";
+import {
+  clamp,
+  isTimeOffStatus,
+  normalizeComment,
+  normalizeDailyExpenses,
+  normalizeDayStatus,
+  parseDateKey,
+  totalDailyExpenses
+} from "@/lib/utils";
 import { Types } from "mongoose";
 
 export const runtime = "nodejs";
@@ -16,6 +24,7 @@ function toEntryResponse(entry: any) {
     hadLunch: entry.hadLunch,
     dayStatus,
     comment: normalizeComment(entry.comment),
+    dailyExpenses: normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote),
     createdAt: entry.createdAt?.toISOString(),
     updatedAt: entry.updatedAt?.toISOString()
   };
@@ -50,6 +59,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const delayMinutes = isTimeOffStatus(nextDayStatus) ? 0 : clamp(Number(body?.delayMinutes ?? 0), 0, 480);
     const hadLunch = isTimeOffStatus(nextDayStatus) ? false : Boolean(body?.hadLunch);
     const comment = isTimeOffStatus(nextDayStatus) ? normalizeComment(body?.comment) : "";
+    const dailyExpenses = normalizeDailyExpenses(body?.dailyExpenses, body?.dailyExpenseAmount, body?.dailyExpenseNote);
+    const dailyExpenseAmount = totalDailyExpenses(dailyExpenses);
+    const dailyExpenseNote = dailyExpenses[0]?.note ?? "";
 
     if (entry.userId.toString() !== userId) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
@@ -67,6 +79,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     entry.hadLunch = hadLunch;
     entry.dayStatus = nextDayStatus;
     entry.comment = comment;
+    entry.dailyExpenseAmount = dailyExpenseAmount;
+    entry.dailyExpenseNote = dailyExpenseNote;
+    entry.dailyExpenses = dailyExpenses;
     await entry.save();
 
     return NextResponse.json({ entry: toEntryResponse(entry) });

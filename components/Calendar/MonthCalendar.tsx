@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { EntryItem } from "@/types";
-import { buildMonthGrid, monthLabel } from "@/lib/utils";
+import { buildMonthGrid, monthLabel, toDateKey } from "@/lib/utils";
 import { DayCell } from "@/components/Calendar/DayCell";
 
 export function MonthCalendar({
@@ -21,6 +22,11 @@ export function MonthCalendar({
 }) {
   const grid = buildMonthGrid(monthKey);
   const entryMap = new Map(entries.map((entry) => [entry.date, entry]));
+  const [todayKey, setTodayKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTodayKey(toDateKey(new Date()));
+  }, []);
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -64,6 +70,7 @@ export function MonthCalendar({
             day={cell.day}
             dateKey={cell.dateKey}
             inMonth={cell.inMonth}
+            isToday={todayKey === cell.dateKey}
             entry={entryMap.get(cell.dateKey)}
             monthTotalDelayMinutes={totalDelayMinutes}
             onClick={() => onSelectDay(cell.dateKey)}

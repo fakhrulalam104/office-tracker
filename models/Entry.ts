@@ -1,6 +1,6 @@
 import { Schema, models, model, type Types } from "mongoose";
 import { DAY_STATUSES } from "@/lib/utils";
-import type { DayStatus } from "@/types";
+import type { DailyExpenseItem, DayStatus } from "@/types";
 
 const EntrySchema = new Schema(
   {
@@ -32,6 +32,35 @@ const EntrySchema = new Schema(
     comment: {
       type: String,
       default: ""
+    },
+    dailyExpenseAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    dailyExpenseNote: {
+      type: String,
+      default: ""
+    },
+    dailyExpenses: {
+      type: [
+        {
+          id: {
+            type: String,
+            required: true
+          },
+          amount: {
+            type: Number,
+            default: 0,
+            min: 0
+          },
+          note: {
+            type: String,
+            default: ""
+          }
+        }
+      ],
+      default: []
     }
   },
   {
@@ -49,6 +78,9 @@ export type EntryDocument = {
   hadLunch: boolean;
   dayStatus: DayStatus;
   comment: string;
+  dailyExpenseAmount: number;
+  dailyExpenseNote: string;
+  dailyExpenses: DailyExpenseItem[];
   createdAt: Date;
   updatedAt: Date;
 };

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { EntryItem, MonthlySummary } from "@/types";
+import type { DailyExpenseItem, EntryItem, MonthlySummary } from "@/types";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { DayModal } from "@/components/Calendar/DayModal";
 import { MonthCalendar } from "@/components/Calendar/MonthCalendar";
@@ -118,7 +118,13 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
     });
   }
 
-  async function handleSave(payload: { delayMinutes: number; hadLunch: boolean; dayStatus: EntryItem["dayStatus"]; comment: string }) {
+  async function handleSave(payload: {
+    delayMinutes: number;
+    hadLunch: boolean;
+    dayStatus: EntryItem["dayStatus"];
+    comment: string;
+    dailyExpenses: DailyExpenseItem[];
+  }) {
     if (!selectedDate) {
       return;
     }
