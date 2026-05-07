@@ -1,8 +1,7 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { Navbar } from "@/components/ui/Navbar";
+import { AppShell } from "@/components/layout/AppShell";
 import { DashboardClient } from "@/components/Dashboard/DashboardClient";
 import { parseMonthKey, toMonthKey } from "@/lib/utils";
+import { requireUser } from "@/lib/require-auth";
 import { authDebug } from "@/lib/auth-debug";
 
 export default async function DashboardPage({
@@ -13,26 +12,20 @@ export default async function DashboardPage({
   authDebug("dashboard.auth-start", {
     requestedMonth: searchParams?.month ?? null
   });
-  const session = await auth();
+  const user = await requireUser();
 
   authDebug("dashboard.auth-result", {
-    hasSession: Boolean(session),
-    hasUserId: Boolean(session?.user?.id),
-    email: session?.user?.email ?? null
+    hasSession: true,
+    hasUserId: Boolean(user.id),
+    email: user.email
   });
-
-  if (!session?.user?.id) {
-    authDebug("dashboard.redirect-login");
-    redirect("/login");
-  }
 
   const month = parseMonthKey(searchParams?.month);
   const currentMonth = toMonthKey(new Date());
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <Navbar userName={session.user.name ?? "Team member"} />
+    <AppShell userName={user.name}>
       <DashboardClient initialMonth={month ?? currentMonth} />
-    </main>
+    </AppShell>
   );
 }

@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { DailyExpenseItem, EntryItem, MonthlySummary } from "@/types";
+import type { DailyExpenseItem, EntryItem, MonthlySummary, UserSettings } from "@/types";
 import { AlertBanner } from "@/components/ui/AlertBanner";
 import { DayModal } from "@/components/Calendar/DayModal";
 import { MonthCalendar } from "@/components/Calendar/MonthCalendar";
 import { MonthlySummary as SummaryCard } from "@/components/Sidebar/MonthlySummary";
-import { getFineState, monthLabel, monthNavigate } from "@/lib/utils";
+import { DEFAULT_USER_SETTINGS, getFineStateForLimit, monthLabel, monthNavigate, toMonthKey } from "@/lib/utils";
 
 export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   const router = useRouter();
@@ -19,8 +19,18 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
     lunchSpend: 0,
     holidayDays: 0,
     sickDays: 0,
-    leaveDays: 0
+    leaveDays: 0,
+    workDays: 0,
+    dailyExpenseTotal: 0,
+    dailyExpenseCount: 0,
+    expenseCategories: [],
+    weeklyDelayMinutes: [],
+    insights: [],
+    delayLimit: DEFAULT_USER_SETTINGS.delayLimit,
+    lunchPrice: DEFAULT_USER_SETTINGS.lunchPrice,
+    currency: DEFAULT_USER_SETTINGS.currency
   });
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +49,10 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
       setError(null);
 
       try {
-        const [entriesResponse, summaryResponse] = await Promise.all([
+        const [entriesResponse, summaryResponse, settingsResponse] = await Promise.all([
           fetch(`/api/entries?month=${month}`),
-          fetch(`/api/summary?month=${month}`)
+          fetch(`/api/summary?month=${month}`),
+          fetch("/api/settings")
         ]);
 
         if (!entriesResponse.ok) {
@@ -52,8 +63,13 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
           throw new Error("Failed to load summary.");
         }
 
+        if (!settingsResponse.ok) {
+          throw new Error("Failed to load settings.");
+        }
+
         const entriesData = (await entriesResponse.json()) as { entries: EntryItem[] };
         const summaryData = (await summaryResponse.json()) as MonthlySummary & { month: string };
+        const settingsData = (await settingsResponse.json()) as { settings: UserSettings };
 
         if (!active) {
           return;
@@ -66,8 +82,18 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
           lunchSpend: summaryData.lunchSpend ?? 0,
           holidayDays: summaryData.holidayDays ?? 0,
           sickDays: summaryData.sickDays ?? 0,
-          leaveDays: summaryData.leaveDays ?? 0
+          leaveDays: summaryData.leaveDays ?? 0,
+          workDays: summaryData.workDays ?? 0,
+          dailyExpenseTotal: summaryData.dailyExpenseTotal ?? 0,
+          dailyExpenseCount: summaryData.dailyExpenseCount ?? 0,
+          expenseCategories: summaryData.expenseCategories ?? [],
+          weeklyDelayMinutes: summaryData.weeklyDelayMinutes ?? [],
+          insights: summaryData.insights ?? [],
+          delayLimit: summaryData.delayLimit ?? DEFAULT_USER_SETTINGS.delayLimit,
+          lunchPrice: summaryData.lunchPrice ?? DEFAULT_USER_SETTINGS.lunchPrice,
+          currency: summaryData.currency ?? DEFAULT_USER_SETTINGS.currency
         });
+        setSettings(settingsData.settings ?? DEFAULT_USER_SETTINGS);
       } catch (fetchError) {
         if (active) {
           setError(fetchError instanceof Error ? fetchError.message : "Unable to load data.");
@@ -86,7 +112,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
     };
   }, [month]);
 
-  const status = useMemo(() => getFineState(summary.totalDelayMinutes), [summary.totalDelayMinutes]);
+  const status = useMemo(() => getFineStateForLimit(summary.totalDelayMinutes, summary.delayLimit), [summary.delayLimit, summary.totalDelayMinutes]);
   const selectedEntry = useMemo(() => entries.find((entry) => entry.date === selectedDate), [entries, selectedDate]);
 
   function goToMonth(nextMonth: string) {
@@ -114,7 +140,16 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
       lunchSpend: summaryData.lunchSpend ?? 0,
       holidayDays: summaryData.holidayDays ?? 0,
       sickDays: summaryData.sickDays ?? 0,
-      leaveDays: summaryData.leaveDays ?? 0
+      leaveDays: summaryData.leaveDays ?? 0,
+      workDays: summaryData.workDays ?? 0,
+      dailyExpenseTotal: summaryData.dailyExpenseTotal ?? 0,
+      dailyExpenseCount: summaryData.dailyExpenseCount ?? 0,
+      expenseCategories: summaryData.expenseCategories ?? [],
+      weeklyDelayMinutes: summaryData.weeklyDelayMinutes ?? [],
+      insights: summaryData.insights ?? [],
+      delayLimit: summaryData.delayLimit ?? DEFAULT_USER_SETTINGS.delayLimit,
+      lunchPrice: summaryData.lunchPrice ?? DEFAULT_USER_SETTINGS.lunchPrice,
+      currency: summaryData.currency ?? DEFAULT_USER_SETTINGS.currency
     });
   }
 
@@ -221,8 +256,10 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
             monthKey={month}
             entries={entries}
             totalDelayMinutes={summary.totalDelayMinutes}
+            weeklyHolidays={settings.weeklyHolidays}
             onPrevMonth={() => goToMonth(monthNavigate(month, -1))}
             onNextMonth={() => goToMonth(monthNavigate(month, 1))}
+            onToday={() => goToMonth(toMonthKey(new Date()))}
             onSelectDay={(dateKey) => {
               setSelectedDate(dateKey);
               setModalOpen(true);
@@ -236,11 +273,53 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
             totalDelayMinutes={summary.totalDelayMinutes}
             lunchDays={summary.lunchDays}
             lunchSpend={summary.lunchSpend}
+            dailyExpenseTotal={summary.dailyExpenseTotal}
+            dailyExpenseCount={summary.dailyExpenseCount}
             holidayDays={summary.holidayDays}
             sickDays={summary.sickDays}
             leaveDays={summary.leaveDays}
+            delayLimit={summary.delayLimit}
+            lunchPrice={summary.lunchPrice}
+            currency={summary.currency}
             loading={loading}
           />
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-slate-900">Monthly Insights</p>
+            <div className="mt-4 space-y-3">
+              {summary.insights.map((insight) => (
+                <p key={insight} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  {insight}
+                </p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-slate-900">Delay by Week</p>
+            <div className="mt-4 space-y-3">
+              {summary.weeklyDelayMinutes.map((week) => (
+                <div key={week.label}>
+                  <div className="flex justify-between text-xs font-semibold text-slate-500">
+                    <span>{week.label}</span>
+                    <span>{week.minutes} min</span>
+                  </div>
+                  <div className="mt-1 h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full bg-sky-500"
+                      style={{ width: `${Math.min(100, (week.minutes / Math.max(1, summary.delayLimit)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {settings.reminderEnabled ? (
+            <div className="rounded-3xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
+              <p className="text-sm font-semibold text-sky-900">Daily Reminder</p>
+              <p className="mt-2 text-sm text-sky-700">
+                Reminder preference is set for {settings.reminderTime}. Fill today&apos;s entry before wrapping up.
+              </p>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -248,6 +327,9 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         open={modalOpen}
         dateKey={selectedDate}
         entry={selectedEntry}
+        weeklyHolidays={settings.weeklyHolidays}
+        lunchPrice={summary.lunchPrice}
+        currency={summary.currency}
         saving={saving}
         onClose={() => {
           setModalOpen(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFineState, MONTH_DELAY_LIMIT } from "@/lib/utils";
+import { getFineStateForLimit } from "@/lib/utils";
 
 function StatPill({
   label,
@@ -32,29 +32,39 @@ export function MonthlySummary({
   totalDelayMinutes,
   lunchDays,
   lunchSpend,
+  dailyExpenseTotal,
+  dailyExpenseCount,
   holidayDays,
   sickDays,
   leaveDays,
+  delayLimit,
+  lunchPrice,
+  currency,
   loading
 }: {
   monthLabel: string;
   totalDelayMinutes: number;
   lunchDays: number;
   lunchSpend: number;
+  dailyExpenseTotal: number;
+  dailyExpenseCount: number;
   holidayDays: number;
   sickDays: number;
   leaveDays: number;
+  delayLimit: number;
+  lunchPrice: number;
+  currency: string;
   loading: boolean;
 }) {
   const [progressWidth, setProgressWidth] = useState(0);
 
   useEffect(() => {
-    const width = Math.min(100, Math.round((totalDelayMinutes / MONTH_DELAY_LIMIT) * 100));
+    const width = Math.min(100, Math.round((totalDelayMinutes / delayLimit) * 100));
     const id = window.requestAnimationFrame(() => setProgressWidth(width));
     return () => window.cancelAnimationFrame(id);
-  }, [totalDelayMinutes]);
+  }, [delayLimit, totalDelayMinutes]);
 
-  const status = getFineState(totalDelayMinutes);
+  const status = getFineStateForLimit(totalDelayMinutes, delayLimit);
   const progressClass =
     status.tone === "danger"
       ? "bg-red-500"
@@ -85,7 +95,7 @@ export function MonthlySummary({
             <div className="mt-2 flex items-end justify-between gap-3">
               <div>
                 <p className="text-3xl font-semibold tracking-tight text-slate-900">{totalDelayMinutes}</p>
-                <p className="text-sm text-slate-500">/ {MONTH_DELAY_LIMIT} minutes</p>
+                <p className="text-sm text-slate-500">/ {delayLimit} minutes</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${progressClass} text-white`}>{status.label}</span>
             </div>
@@ -99,9 +109,21 @@ export function MonthlySummary({
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-semibold text-slate-900">Lunch Spend</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">{lunchSpend} BDT</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {lunchSpend.toLocaleString("en-US")} {currency}
+            </p>
             <p className="text-sm text-slate-500">
-              {lunchDays} day{lunchDays === 1 ? "" : "s"} x 90 BDT
+              {lunchDays} day{lunchDays === 1 ? "" : "s"} x {lunchPrice} {currency}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">Daily Expenses</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {dailyExpenseTotal.toLocaleString("en-US")} {currency}
+            </p>
+            <p className="text-sm text-slate-500">
+              {dailyExpenseCount} item{dailyExpenseCount === 1 ? "" : "s"} tracked outside lunch spend
             </p>
           </div>
 

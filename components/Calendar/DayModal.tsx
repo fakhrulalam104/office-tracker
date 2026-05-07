@@ -4,16 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import {
   COMMENT_MAX_LENGTH,
   DAILY_EXPENSE_NOTE_MAX_LENGTH,
+  EXPENSE_CATEGORIES,
   clamp,
   dayStatusLabel,
   defaultDayStatusForDate,
+  expenseCategoryLabel,
   formatDateLabel,
   normalizeDailyExpenseNote,
   normalizeDailyExpenses,
   normalizeDayStatus,
   totalDailyExpenses
 } from "@/lib/utils";
-import type { DailyExpenseItem, DayStatus, EntryItem } from "@/types";
+import type { DailyExpenseItem, DayStatus, EntryItem, ExpenseCategory } from "@/types";
 
 const presets = [0, 10, 20, 30, 45, 60, 90];
 const statusOrder: DayStatus[] = ["work", "holiday", "sick", "leave"];
@@ -30,6 +32,9 @@ export function DayModal({
   open,
   dateKey,
   entry,
+  weeklyHolidays,
+  lunchPrice,
+  currency,
   saving,
   onClose,
   onSave,
@@ -38,6 +43,9 @@ export function DayModal({
   open: boolean;
   dateKey: string | null;
   entry?: EntryItem;
+  weeklyHolidays: number[];
+  lunchPrice: number;
+  currency: string;
   saving: boolean;
   onClose: () => void;
   onSave: (data: {
@@ -57,6 +65,7 @@ export function DayModal({
   const [comment, setComment] = useState("");
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpenseItem[]>([]);
   const [expenseDraftAmount, setExpenseDraftAmount] = useState("");
+  const [expenseDraftCategory, setExpenseDraftCategory] = useState<ExpenseCategory>("transport");
   const [expenseDraftNote, setExpenseDraftNote] = useState("");
 
   useEffect(() => {
@@ -68,7 +77,7 @@ export function DayModal({
       return;
     }
 
-    const currentStatus = entry ? normalizeDayStatus(entry.dayStatus) : dateKey ? defaultDayStatusForDate(dateKey) : "work";
+    const currentStatus = entry ? normalizeDayStatus(entry.dayStatus) : dateKey ? defaultDayStatusForDate(dateKey, { weeklyHolidays }) : "work";
     const currentMinutes = currentStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
     const matchedPreset = presets.includes(currentMinutes) ? currentMinutes : null;
 
@@ -79,8 +88,9 @@ export function DayModal({
     setComment(currentStatus !== "work" ? entry?.comment ?? "" : "");
     setDailyExpenses(normalizeDailyExpenses(entry?.dailyExpenses));
     setExpenseDraftAmount("");
+    setExpenseDraftCategory("transport");
     setExpenseDraftNote("");
-  }, [dateKey, entry, open]);
+  }, [dateKey, entry, open, weeklyHolidays]);
 
   useEffect(() => {
     if (!open) {
@@ -110,8 +120,9 @@ export function DayModal({
       return;
     }
 
-    setDailyExpenses((current) => [...current, { id: createExpenseId(), amount: draftExpenseAmount, note: draftExpenseNote }]);
+    setDailyExpenses((current) => [...current, { id: createExpenseId(), amount: draftExpenseAmount, category: expenseDraftCategory, note: draftExpenseNote }]);
     setExpenseDraftAmount("");
+    setExpenseDraftCategory("transport");
     setExpenseDraftNote("");
   }
 
@@ -250,8 +261,12 @@ export function DayModal({
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                     <div>
-                      <p className="text-sm font-medium text-slate-800">Had office lunch today? (+90 BDT)</p>
-                      <p className="mt-1 text-sm text-slate-500">90 BDT will be added to your monthly spend.</p>
+                      <p className="text-sm font-medium text-slate-800">
+                        Had office lunch today? (+{lunchPrice} {currency})
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {lunchPrice} {currency} will be added to your monthly spend.
+                      </p>
                     </div>
                   </label>
 
@@ -288,7 +303,7 @@ export function DayModal({
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Expenses</p>
                 <h3 className="mt-2 text-lg font-semibold tracking-tight">Daily expense list</h3>
               </div>
-              <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">BDT</div>
+              <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">{currency}</div>
             </div>
 
             <label className="mt-5 block">
@@ -303,6 +318,21 @@ export function DayModal({
                 onChange={(event) => setExpenseDraftAmount(event.target.value)}
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-2 focus:ring-sky-300/30"
               />
+            </label>
+
+            <label className="mt-4 block">
+              <span className="text-sm font-medium text-slate-200">Category</span>
+              <select
+                value={expenseDraftCategory}
+                onChange={(event) => setExpenseDraftCategory(event.target.value as ExpenseCategory)}
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-300/30"
+              >
+                {EXPENSE_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="mt-4 block">
@@ -332,7 +362,12 @@ export function DayModal({
                   <div key={expense.id} className="rounded-2xl border border-white/10 bg-white/10 p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white">{expense.amount.toLocaleString("en-US")} BDT</p>
+                        <p className="text-sm font-semibold text-white">
+                          {expense.amount.toLocaleString("en-US")} {currency}
+                        </p>
+                        <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200">
+                          {expenseCategoryLabel(expense.category)}
+                        </p>
                         {expense.note ? <p className="mt-1 break-words text-xs leading-5 text-slate-300">{expense.note}</p> : null}
                       </div>
                       <button
@@ -354,7 +389,9 @@ export function DayModal({
 
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
               <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">Tracked today</p>
-              <p className="mt-2 text-2xl font-semibold">{activeDailyExpense.toLocaleString("en-US")} BDT</p>
+              <p className="mt-2 text-2xl font-semibold">
+                {activeDailyExpense.toLocaleString("en-US")} {currency}
+              </p>
               <p className="mt-2 text-xs leading-5 text-slate-300">Personal expense tracking only. Lunch spend stays separate.</p>
             </div>
           </aside>
@@ -388,7 +425,7 @@ export function DayModal({
                   dayStatus,
                   comment: dayStatus !== "work" ? comment.trim() : "",
                   dailyExpenses: hasDraftExpense
-                    ? [...dailyExpenses, { id: createExpenseId(), amount: draftExpenseAmount, note: draftExpenseNote }]
+                    ? [...dailyExpenses, { id: createExpenseId(), amount: draftExpenseAmount, category: expenseDraftCategory, note: draftExpenseNote }]
                     : dailyExpenses
                 })
               }

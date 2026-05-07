@@ -8,6 +8,7 @@ export function DayCell({
   dateKey,
   inMonth,
   isToday,
+  weeklyHolidays,
   entry,
   monthTotalDelayMinutes,
   onClick
@@ -16,11 +17,12 @@ export function DayCell({
   dateKey: string;
   inMonth: boolean;
   isToday: boolean;
+  weeklyHolidays: number[];
   entry?: EntryItem;
   monthTotalDelayMinutes: number;
   onClick: () => void;
 }) {
-  const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey);
+  const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey, { weeklyHolidays });
   const delayMinutes = dayStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
   const hadLunch = dayStatus === "work" ? entry?.hadLunch ?? false : false;
   const dailyExpenses = normalizeDailyExpenses(entry?.dailyExpenses);
