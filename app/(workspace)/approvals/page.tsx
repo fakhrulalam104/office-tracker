@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/layout/AppShell";
 import { ApprovalsPageClient } from "@/components/pages/ApprovalsPageClient";
 import { requireUser } from "@/lib/require-auth";
 import { canAccessTracking } from "@/lib/roles";
@@ -10,9 +9,5 @@ export default async function ApprovalsPage() {
     redirect("/admin");
   }
 
-  return (
-    <AppShell userName={user.name} role={user.role}>
-      <ApprovalsPageClient />
-    </AppShell>
-  );
+  return <ApprovalsPageClient />;
 }

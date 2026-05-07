@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/layout/AppShell";
 import { InsightsPageClient } from "@/components/pages/InsightsPageClient";
 import { requireUser } from "@/lib/require-auth";
 import { canAccessTracking } from "@/lib/roles";
@@ -10,9 +9,5 @@ export default async function InsightsPage() {
     redirect("/admin");
   }
 
-  return (
-    <AppShell userName={user.name} role={user.role}>
-      <InsightsPageClient />
-    </AppShell>
-  );
+  return <InsightsPageClient />;
 }

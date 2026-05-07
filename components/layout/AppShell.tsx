@@ -179,10 +179,8 @@ export function AppShell({ userName, role = "member", children }: { userName: st
         : trackingNavItems;
 
   useEffect(() => {
-    if (pendingHref) {
-      setPendingHref(null);
-    }
-  }, [pathname, pendingHref]);
+    setPendingHref(null);
+  }, [pathname]);
 
   function startNavigationFeedback(href: string) {
     if (href === pathname || pathname.startsWith(`${href}/`)) {
@@ -269,9 +267,9 @@ export function AppShell({ userName, role = "member", children }: { userName: st
         </div>
       </aside>
 
-      <section className="min-w-0">
+      <section className={`min-w-0 transition-opacity duration-200 ${pendingHref ? "opacity-80" : "opacity-100"}`}>
         <div
-          className={`pointer-events-none sticky top-0 z-50 transition-opacity duration-200 ${
+          className={`pointer-events-none fixed inset-x-0 top-0 z-[70] transition-opacity duration-200 ${
             pendingHref ? "opacity-100" : "opacity-0"
           }`}
           aria-hidden={pendingHref ? "false" : "true"}
@@ -280,7 +278,7 @@ export function AppShell({ userName, role = "member", children }: { userName: st
             <div className="navigation-progress h-full w-1/3 rounded-r-full bg-sky-500" />
           </div>
           <div className="flex justify-end px-4 pt-3 lg:px-8">
-            <div className="rounded-full border border-sky-200 bg-white/95 px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm backdrop-blur">
+            <div className="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-sky-700 shadow-md">
               Loading page...
             </div>
           </div>
