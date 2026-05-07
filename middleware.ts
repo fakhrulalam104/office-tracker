@@ -3,8 +3,18 @@ import { getToken } from "next-auth/jwt";
 import { getAuthSecret, getAuthSecretSource } from "@/lib/auth-env";
 import { authDebug, authDebugError } from "@/lib/auth-debug";
 
-const protectedRoutes = ["/dashboard"];
-const protectedApiPrefixes = ["/api/entries", "/api/summary"];
+const protectedRoutes = ["/dashboard", "/expenses", "/insights", "/approvals", "/notifications", "/reports", "/profile", "/settings", "/admin"];
+const protectedApiPrefixes = [
+  "/api/entries",
+  "/api/summary",
+  "/api/settings",
+  "/api/profile",
+  "/api/export",
+  "/api/approvals",
+  "/api/audit",
+  "/api/notifications",
+  "/api/admin"
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -60,5 +70,29 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/entries", "/api/entries/:path*", "/api/summary"]
+  matcher: [
+    "/dashboard/:path*",
+    "/expenses/:path*",
+    "/insights/:path*",
+    "/approvals/:path*",
+    "/notifications/:path*",
+    "/reports/:path*",
+    "/profile/:path*",
+    "/settings/:path*",
+    "/admin/:path*",
+    "/api/entries",
+    "/api/entries/:path*",
+    "/api/summary",
+    "/api/settings",
+    "/api/profile",
+    "/api/export",
+    "/api/approvals",
+    "/api/approvals/:path*",
+    "/api/audit",
+    "/api/notifications",
+    "/api/notifications/:path*"
+    ,
+    "/api/admin",
+    "/api/admin/:path*"
+  ]
 };

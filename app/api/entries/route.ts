@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { logAuditEvent } from "@/lib/audit";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
 import {
@@ -36,6 +37,8 @@ type SessionShape = {
     id?: string | null;
     name?: string | null;
     email?: string | null;
+    role?: string | null;
+    organizationId?: string | null;
   } | null;
 } | null;
 
@@ -106,6 +109,14 @@ export async function POST(request: Request) {
       existingEntry.dailyExpenseNote = dailyExpenseNote;
       existingEntry.dailyExpenses = dailyExpenses;
       await existingEntry.save();
+      await logAuditEvent({
+        userId,
+        organizationId: session?.user?.organizationId,
+        action: "entry.updated",
+        entityType: "entry",
+        entityId: existingEntry._id.toString(),
+        details: { date, dayStatus, delayMinutes, hadLunch, dailyExpenseAmount }
+      });
 
       return NextResponse.json({ entry: toEntryResponse(existingEntry), created: false });
     }
@@ -120,6 +131,14 @@ export async function POST(request: Request) {
       dailyExpenseAmount,
       dailyExpenseNote,
       dailyExpenses
+    });
+    await logAuditEvent({
+      userId,
+      organizationId: session?.user?.organizationId,
+      action: "entry.created",
+      entityType: "entry",
+      entityId: entry._id.toString(),
+      details: { date, dayStatus, delayMinutes, hadLunch, dailyExpenseAmount }
     });
 
     return NextResponse.json({ entry: toEntryResponse(entry), created: true }, { status: 201 });

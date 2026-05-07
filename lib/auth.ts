@@ -5,6 +5,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
 import { getAuthSecret, getAuthSecretSource } from "@/lib/auth-env";
 import { authDebug, authDebugError } from "@/lib/auth-debug";
+import { normalizeUserRole } from "@/lib/roles";
 
 const sessionMaxAge = 30 * 24 * 60 * 60;
 
@@ -110,7 +111,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return {
             id: user._id.toString(),
             name: user.name,
-            email: user.email
+            email: user.email,
+            role: normalizeUserRole(user.role, user.email),
+            organizationId: user.organizationId?.toString() ?? null
           };
         } catch (error) {
           authDebugError("authorize.exception", error, { flowId, email });
@@ -131,6 +134,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.userId = user.id;
         token.name = user.name;
+        token.email = user.email;
+        token.role = normalizeUserRole(user.role, user.email);
+        token.organizationId = user.organizationId ?? null;
+      } else if (token.userId) {
+        await connectToDatabase();
+        const currentUser = (await User.findById(token.userId).select("name email role organizationId").lean()) as
+          | {
+              name: string;
+              email: string;
+              role?: string;
+              organizationId?: { toString(): string } | null;
+            }
+          | null;
+        if (currentUser) {
+          token.name = currentUser.name;
+          token.email = currentUser.email;
+          token.role = normalizeUserRole(currentUser.role, currentUser.email);
+          token.organizationId = currentUser.organizationId?.toString() ?? null;
+        }
       }
 
       authDebug("jwt.callback-complete", {
@@ -152,6 +174,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.userId ?? "";
         session.user.name = token.name ?? session.user.name ?? null;
         session.user.email = token.email ?? session.user.email ?? null;
+        session.user.role = normalizeUserRole(token.role, session.user.email);
+        session.user.organizationId = token.organizationId ?? null;
       }
 
       authDebug("session.callback-complete", {

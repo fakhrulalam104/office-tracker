@@ -17,6 +17,60 @@ const UserSchema = new Schema(
     password: {
       type: String,
       required: true
+    },
+    role: {
+      type: String,
+      enum: ["super_admin", "owner", "admin", "member"],
+      default: "member"
+    },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      index: true
+    },
+    active: {
+      type: Boolean,
+      default: true
+    },
+    phone: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    jobTitle: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    department: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    employeeCode: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    bio: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    emergencyContactName: {
+      type: String,
+      default: "",
+      trim: true
+    },
+    emergencyContactPhone: {
+      type: String,
+      default: "",
+      trim: true
     }
   },
   {

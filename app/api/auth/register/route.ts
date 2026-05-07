@@ -2,7 +2,9 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/User";
+import { Organization } from "@/models/Organization";
 import { authDebug, authDebugError } from "@/lib/auth-debug";
+import { isSuperAdminEmail } from "@/lib/roles";
 
 export const runtime = "nodejs";
 
@@ -12,6 +14,7 @@ function validateRegistration(body: unknown) {
     name?: string;
     email?: string;
     password?: string;
+    company?: string;
   };
 
   if (!payload?.name || payload.name.trim().length < 2) {
@@ -55,6 +58,7 @@ export async function POST(request: Request) {
 
     const name = payload.name!.trim();
     const password = payload.password!;
+    const company = payload.company?.trim() || `${name}'s Workspace`;
 
     authDebug("register.db-connect-start", { email });
     await connectToDatabase();
@@ -79,11 +83,22 @@ export async function POST(request: Request) {
       hashLength: hashedPassword.length
     });
 
+    const role = isSuperAdminEmail(email) ? "super_admin" : "owner";
+    const organization = await Organization.create({
+      name: isSuperAdminEmail(email) ? "Office Tracker Super Admin" : company,
+      plan: "trial"
+    });
+
     const user = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      role,
+      organizationId: organization._id
     });
+
+    organization.ownerId = user._id;
+    await organization.save();
 
     authDebug("register.user-created", {
       email,

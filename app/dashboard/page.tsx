@@ -3,6 +3,8 @@ import { DashboardClient } from "@/components/Dashboard/DashboardClient";
 import { parseMonthKey, toMonthKey } from "@/lib/utils";
 import { requireUser } from "@/lib/require-auth";
 import { authDebug } from "@/lib/auth-debug";
+import { canAccessTracking } from "@/lib/roles";
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage({
   searchParams
@@ -20,11 +22,15 @@ export default async function DashboardPage({
     email: user.email
   });
 
+  if (!canAccessTracking(user.role)) {
+    redirect("/admin");
+  }
+
   const month = parseMonthKey(searchParams?.month);
   const currentMonth = toMonthKey(new Date());
 
   return (
-    <AppShell userName={user.name}>
+    <AppShell userName={user.name} role={user.role}>
       <DashboardClient initialMonth={month ?? currentMonth} />
     </AppShell>
   );

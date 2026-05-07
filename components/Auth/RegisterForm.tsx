@@ -15,6 +15,7 @@ export function RegisterForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
@@ -51,6 +52,7 @@ export function RegisterForm() {
       body: JSON.stringify({
         name,
         email,
+        company,
         password
       })
     });
@@ -96,6 +98,17 @@ export function RegisterForm() {
             placeholder="Your name"
           />
           {errors.name ? <p className="mt-2 text-sm text-red-600">{errors.name}</p> : null}
+        </label>
+
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-slate-700">Company or team</span>
+          <input
+            type="text"
+            value={company}
+            onChange={(event) => setCompany(event.target.value)}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+            placeholder="Acme Office"
+          />
         </label>
 
         <label className="block">

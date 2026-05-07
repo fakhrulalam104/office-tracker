@@ -36,7 +36,6 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-
   useEffect(() => {
     setMonth(initialMonth);
   }, [initialMonth]);
@@ -66,7 +65,6 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         if (!settingsResponse.ok) {
           throw new Error("Failed to load settings.");
         }
-
         const entriesData = (await entriesResponse.json()) as { entries: EntryItem[] };
         const summaryData = (await summaryResponse.json()) as MonthlySummary & { month: string };
         const settingsData = (await settingsResponse.json()) as { settings: UserSettings };
@@ -121,10 +119,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   }
 
   async function reloadMonth() {
-    const [entriesResponse, summaryResponse] = await Promise.all([
-      fetch(`/api/entries?month=${month}`),
-      fetch(`/api/summary?month=${month}`)
-    ]);
+    const [entriesResponse, summaryResponse] = await Promise.all([fetch(`/api/entries?month=${month}`), fetch(`/api/summary?month=${month}`)]);
 
     if (!entriesResponse.ok || !summaryResponse.ok) {
       throw new Error("Unable to refresh the month.");
@@ -246,7 +241,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         <AlertBanner tone={status.tone === "danger" ? "danger" : "warning"} message={bannerMessage} />
       ) : null}
 
-      <div className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(320px,0.8fr)] lg:px-8">
+      <div className="mx-auto grid max-w-[1320px] gap-6 px-6 py-8 lg:grid-cols-[minmax(0,2fr)_340px] lg:px-10">
         <div className="space-y-4">
           {error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -283,35 +278,6 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
             currency={summary.currency}
             loading={loading}
           />
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">Monthly Insights</p>
-            <div className="mt-4 space-y-3">
-              {summary.insights.map((insight) => (
-                <p key={insight} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  {insight}
-                </p>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">Delay by Week</p>
-            <div className="mt-4 space-y-3">
-              {summary.weeklyDelayMinutes.map((week) => (
-                <div key={week.label}>
-                  <div className="flex justify-between text-xs font-semibold text-slate-500">
-                    <span>{week.label}</span>
-                    <span>{week.minutes} min</span>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full bg-sky-500"
-                      style={{ width: `${Math.min(100, (week.minutes / Math.max(1, summary.delayLimit)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
           {settings.reminderEnabled ? (
             <div className="rounded-3xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
               <p className="text-sm font-semibold text-sky-900">Daily Reminder</p>

@@ -5,8 +5,29 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import type { UserRole } from "@/types";
+import { canManageTeam, getDefaultHomePath } from "@/lib/roles";
 
-function LineIcon({ name }: { name: "dashboard" | "expenses" | "insights" | "reports" | "settings" | "team" | "chevron" | "logout" }) {
+function LineIcon({
+  name
+}: {
+  name:
+    | "dashboard"
+    | "expenses"
+    | "insights"
+    | "approvals"
+    | "notifications"
+    | "reports"
+    | "profile"
+    | "settings"
+    | "team"
+    | "users"
+    | "building"
+    | "bell"
+    | "shield"
+    | "chevron"
+    | "logout";
+}) {
   const common = {
     fill: "none",
     stroke: "currentColor",
@@ -40,6 +61,26 @@ function LineIcon({ name }: { name: "dashboard" | "expenses" | "insights" | "rep
           <path d="M18 6v3" {...common} />
         </>
       ) : null}
+      {name === "approvals" ? (
+        <>
+          <path d="M8 4h8" {...common} />
+          <path d="M9 2.5h6v3H9z" {...common} />
+          <path d="M7 5.5h10A1.5 1.5 0 0 1 18.5 7v12A1.5 1.5 0 0 1 17 20.5H7A1.5 1.5 0 0 1 5.5 19V7A1.5 1.5 0 0 1 7 5.5Z" {...common} />
+          <path d="m9 12 2 2 4-4" {...common} />
+        </>
+      ) : null}
+      {name === "notifications" ? (
+        <>
+          <path d="M15 17H9a2 2 0 0 1-2-2v-3.2c0-1.7.7-3.3 2-4.4l.4-.4A3.7 3.7 0 0 1 12 6c1 0 1.9.4 2.6 1.1l.4.4c1.3 1.1 2 2.7 2 4.4V15a2 2 0 0 1-2 2Z" {...common} />
+          <path d="M10 19a2 2 0 0 0 4 0" {...common} />
+        </>
+      ) : null}
+      {name === "profile" ? (
+        <>
+          <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" {...common} />
+          <path d="M5 20c0-3 3.1-5 7-5s7 2 7 5" {...common} />
+        </>
+      ) : null}
       {name === "reports" ? (
         <>
           <path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" {...common} />
@@ -62,6 +103,37 @@ function LineIcon({ name }: { name: "dashboard" | "expenses" | "insights" | "rep
           <path d="M17 4.2a3 3 0 0 1 0 5.6" {...common} />
         </>
       ) : null}
+      {name === "users" ? (
+        <>
+          <path d="M17 20c0-2.1-1.7-3.8-3.8-3.8H8.8C6.7 16.2 5 17.9 5 20" {...common} />
+          <path d="M11 12a3.8 3.8 0 1 0 0-7.6A3.8 3.8 0 0 0 11 12Z" {...common} />
+          <path d="M20 19.5c0-1.7-1-3.1-2.5-3.7" {...common} />
+          <path d="M16.8 4.7a2.9 2.9 0 0 1 0 5.4" {...common} />
+        </>
+      ) : null}
+      {name === "building" ? (
+        <>
+          <path d="M4 20h16" {...common} />
+          <path d="M6 20V6.5A1.5 1.5 0 0 1 7.5 5h9A1.5 1.5 0 0 1 18 6.5V20" {...common} />
+          <path d="M9 9h1" {...common} />
+          <path d="M14 9h1" {...common} />
+          <path d="M9 13h1" {...common} />
+          <path d="M14 13h1" {...common} />
+          <path d="M11.5 20v-3h1v3" {...common} />
+        </>
+      ) : null}
+      {name === "bell" ? (
+        <>
+          <path d="M15 17H9a2 2 0 0 1-2-2v-3.2c0-1.7.7-3.3 2-4.4l.4-.4A3.7 3.7 0 0 1 12 6c1 0 1.9.4 2.6 1.1l.4.4c1.3 1.1 2 2.7 2 4.4V15a2 2 0 0 1-2 2Z" {...common} />
+          <path d="M10 19a2 2 0 0 0 4 0" {...common} />
+        </>
+      ) : null}
+      {name === "shield" ? (
+        <>
+          <path d="M12 3 5.5 5.5V11c0 4.3 2.7 8.2 6.5 10 3.8-1.8 6.5-5.7 6.5-10V5.5L12 3Z" {...common} />
+          <path d="m9.5 12 1.7 1.7 3.3-3.7" {...common} />
+        </>
+      ) : null}
       {name === "chevron" ? <path d="m9 6 6 6-6 6" {...common} /> : null}
       {name === "logout" ? (
         <>
@@ -74,18 +146,36 @@ function LineIcon({ name }: { name: "dashboard" | "expenses" | "insights" | "rep
   );
 }
 
-const navItems = [
+const trackingNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const },
   { href: "/expenses", label: "Expenses", icon: "expenses" as const },
   { href: "/insights", label: "Insights", icon: "insights" as const },
+  { href: "/approvals", label: "Approvals", icon: "approvals" as const },
+  { href: "/notifications", label: "Notifications", icon: "notifications" as const },
   { href: "/reports", label: "Reports", icon: "reports" as const },
-  { href: "/settings", label: "Settings", icon: "settings" as const },
-  { href: "/admin", label: "Team Mode", icon: "team" as const }
+  { href: "/profile", label: "Profile", icon: "profile" as const },
+  { href: "/settings", label: "Settings", icon: "settings" as const }
 ];
 
-export function AppShell({ userName, children }: { userName: string; children: ReactNode }) {
+const adminNavItems = [
+  { href: "/admin", label: "Admin Dashboard", icon: "dashboard" as const },
+  { href: "/admin/users", label: "Users", icon: "users" as const },
+  { href: "/admin/organizations", label: "Organizations", icon: "building" as const },
+  { href: "/admin/approvals", label: "Approvals", icon: "team" as const },
+  { href: "/admin/notifications", label: "Notifications", icon: "bell" as const },
+  { href: "/admin/audit", label: "Audit Log", icon: "shield" as const },
+  { href: "/profile", label: "Profile", icon: "profile" as const }
+];
+
+export function AppShell({ userName, role = "member", children }: { userName: string; role?: UserRole; children: ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const visibleNavItems =
+    role === "super_admin"
+      ? adminNavItems
+      : canManageTeam(role)
+        ? [...trackingNavItems, ...adminNavItems]
+        : trackingNavItems;
 
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
@@ -96,7 +186,7 @@ export function AppShell({ userName, children }: { userName: string; children: R
       >
         <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:flex-col lg:items-stretch lg:gap-5 lg:p-5">
           <div className={`flex items-center gap-3 ${collapsed ? "lg:flex-col lg:justify-center" : "lg:justify-between"}`}>
-            <Link href="/dashboard" className={`flex min-w-0 items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}>
+            <Link href={getDefaultHomePath(role)} className={`flex min-w-0 items-center gap-3 ${collapsed ? "lg:justify-center" : ""}`}>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white text-sm font-black text-slate-950">
                 <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-950" />
               </span>
@@ -120,7 +210,7 @@ export function AppShell({ userName, children }: { userName: string; children: R
           </div>
 
           <nav className="flex flex-1 items-center gap-2 overflow-x-auto lg:block lg:space-y-2 lg:overflow-visible">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
