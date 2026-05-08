@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       ...entries.map((entry) => {
         const expenses = normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote);
         const expenseItems = expenses
-          .map((expense) => `${expenseCategoryLabel(expense.category)}: ${expense.amount} ${settings.currency}${expense.note ? ` - ${expense.note}` : ""}`)
+          .map((expense) => `${expenseCategoryLabel(expense.category, settings.expenseCategories)}: ${expense.amount} ${settings.currency}${expense.note ? ` - ${expense.note}` : ""}`)
           .join("; ");
 
         return [

@@ -46,11 +46,22 @@ export async function GET(request: NextRequest) {
     const workDays = workEntries.length;
     const allExpenses = entries.flatMap((entry) => normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote));
     const dailyExpenseTotal = totalDailyExpenses(allExpenses);
-    const expenseCategories = EXPENSE_CATEGORIES.map((category) => {
+    const configuredCategories = settings.expenseCategories.length > 0 ? settings.expenseCategories : EXPENSE_CATEGORIES;
+    const unknownCategories = Array.from(new Set(allExpenses.map((expense) => expense.category))).filter(
+      (category) => !configuredCategories.some((option) => option.value === category)
+    );
+    const expenseCategoryOptions = [
+      ...configuredCategories,
+      ...unknownCategories.map((category) => ({
+        value: category,
+        label: expenseCategoryLabel(category, configuredCategories)
+      }))
+    ];
+    const expenseCategories = expenseCategoryOptions.map((category) => {
       const expenses = allExpenses.filter((expense) => expense.category === category.value);
       return {
         category: category.value,
-        label: expenseCategoryLabel(category.value),
+        label: expenseCategoryLabel(category.value, expenseCategoryOptions),
         total: totalDailyExpenses(expenses),
         count: expenses.length
       };

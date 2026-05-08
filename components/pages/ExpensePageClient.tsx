@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { EntryItem, MonthlySummary } from "@/types";
+import type { EntryItem, MonthlySummary, UserSettings } from "@/types";
 import { DEFAULT_USER_SETTINGS, expenseCategoryLabel, monthLabel, monthNavigate, toMonthKey, totalDailyExpenses } from "@/lib/utils";
 import { PageHeader } from "@/components/pages/PageHeader";
 
@@ -9,6 +9,7 @@ export function ExpensePageClient() {
   const [month, setMonth] = useState(toMonthKey(new Date()));
   const [entries, setEntries] = useState<EntryItem[]>([]);
   const [summary, setSummary] = useState<MonthlySummary | null>(null);
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,13 +17,19 @@ export function ExpensePageClient() {
 
     async function load() {
       setLoading(true);
-      const [entriesResponse, summaryResponse] = await Promise.all([fetch(`/api/entries?month=${month}`), fetch(`/api/summary?month=${month}`)]);
+      const [entriesResponse, summaryResponse, settingsResponse] = await Promise.all([
+        fetch(`/api/entries?month=${month}`),
+        fetch(`/api/summary?month=${month}`),
+        fetch("/api/settings")
+      ]);
       const entriesData = (await entriesResponse.json()) as { entries: EntryItem[] };
       const summaryData = (await summaryResponse.json()) as MonthlySummary;
+      const settingsData = (await settingsResponse.json()) as { settings: UserSettings };
 
       if (active) {
         setEntries(entriesData.entries ?? []);
         setSummary(summaryData);
+        setSettings(settingsData.settings ?? DEFAULT_USER_SETTINGS);
         setLoading(false);
       }
     }
@@ -100,7 +107,7 @@ export function ExpensePageClient() {
             {expenses.map((expense) => (
               <div key={`${expense.date}-${expense.id}`} className="flex flex-wrap items-start justify-between gap-3 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{expenseCategoryLabel(expense.category)}</p>
+                  <p className="text-sm font-semibold text-slate-900">{expenseCategoryLabel(expense.category, settings.expenseCategories)}</p>
                   <p className="text-sm text-slate-500">{expense.date}</p>
                   {expense.note ? <p className="mt-1 text-sm text-slate-600">{expense.note}</p> : null}
                 </div>

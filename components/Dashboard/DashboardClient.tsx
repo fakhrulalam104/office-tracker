@@ -296,6 +296,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         weeklyHolidays={settings.weeklyHolidays}
         lunchPrice={summary.lunchPrice}
         currency={summary.currency}
+        expenseCategories={settings.expenseCategories}
         saving={saving}
         onClose={() => {
           setModalOpen(false);

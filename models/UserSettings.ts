@@ -29,6 +29,23 @@ const UserSettingsSchema = new Schema(
       default: "BDT",
       trim: true
     },
+    expenseCategories: {
+      type: [
+        {
+          value: {
+            type: String,
+            required: true,
+            trim: true
+          },
+          label: {
+            type: String,
+            required: true,
+            trim: true
+          }
+        }
+      ],
+      default: undefined
+    },
     reminderEnabled: {
       type: Boolean,
       default: false

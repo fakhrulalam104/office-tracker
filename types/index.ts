@@ -1,7 +1,12 @@
 export type DayStatus = "work" | "holiday" | "sick" | "leave";
 export type UserRole = "super_admin" | "owner" | "admin" | "member";
 
-export type ExpenseCategory = "transport" | "food" | "supplies" | "personal" | "other";
+export type ExpenseCategory = string;
+
+export type ExpenseCategoryOption = {
+  value: ExpenseCategory;
+  label: string;
+};
 
 export type DailyExpenseItem = {
   id: string;
@@ -53,6 +58,7 @@ export type UserSettings = {
   lunchPrice: number;
   delayLimit: number;
   currency: string;
+  expenseCategories: ExpenseCategoryOption[];
   reminderEnabled: boolean;
   reminderTime: string;
 };

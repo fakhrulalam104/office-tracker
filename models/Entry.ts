@@ -56,7 +56,6 @@ const EntrySchema = new Schema(
           },
           category: {
             type: String,
-            enum: ["transport", "food", "supplies", "personal", "other"],
             default: "other"
           },
           note: {

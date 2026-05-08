@@ -16,6 +16,7 @@ import {
   totalDailyExpenses
 } from "@/lib/utils";
 import type { DailyExpenseItem, DayStatus, EntryItem, ExpenseCategory } from "@/types";
+import type { ExpenseCategoryOption } from "@/types";
 
 const presets = [0, 10, 20, 30, 45, 60, 90];
 const statusOrder: DayStatus[] = ["work", "holiday", "sick", "leave"];
@@ -35,6 +36,7 @@ export function DayModal({
   weeklyHolidays,
   lunchPrice,
   currency,
+  expenseCategories = EXPENSE_CATEGORIES,
   saving,
   onClose,
   onSave,
@@ -46,6 +48,7 @@ export function DayModal({
   weeklyHolidays: number[];
   lunchPrice: number;
   currency: string;
+  expenseCategories?: ExpenseCategoryOption[];
   saving: boolean;
   onClose: () => void;
   onSave: (data: {
@@ -88,9 +91,9 @@ export function DayModal({
     setComment(currentStatus !== "work" ? entry?.comment ?? "" : "");
     setDailyExpenses(normalizeDailyExpenses(entry?.dailyExpenses));
     setExpenseDraftAmount("");
-    setExpenseDraftCategory("transport");
+    setExpenseDraftCategory(expenseCategories[0]?.value ?? "other");
     setExpenseDraftNote("");
-  }, [dateKey, entry, open, weeklyHolidays]);
+  }, [dateKey, entry, expenseCategories, open, weeklyHolidays]);
 
   useEffect(() => {
     if (!open) {
@@ -122,7 +125,7 @@ export function DayModal({
 
     setDailyExpenses((current) => [...current, { id: createExpenseId(), amount: draftExpenseAmount, category: expenseDraftCategory, note: draftExpenseNote }]);
     setExpenseDraftAmount("");
-    setExpenseDraftCategory("transport");
+    setExpenseDraftCategory(expenseCategories[0]?.value ?? "other");
     setExpenseDraftNote("");
   }
 
@@ -327,7 +330,7 @@ export function DayModal({
                 onChange={(event) => setExpenseDraftCategory(event.target.value as ExpenseCategory)}
                 className="mt-2 w-full rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-300/30"
               >
-                {EXPENSE_CATEGORIES.map((category) => (
+                {expenseCategories.map((category) => (
                   <option key={category.value} value={category.value}>
                     {category.label}
                   </option>
@@ -366,7 +369,7 @@ export function DayModal({
                           {expense.amount.toLocaleString("en-US")} {currency}
                         </p>
                         <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-200">
-                          {expenseCategoryLabel(expense.category)}
+                          {expenseCategoryLabel(expense.category, expenseCategories)}
                         </p>
                         {expense.note ? <p className="mt-1 break-words text-xs leading-5 text-slate-300">{expense.note}</p> : null}
                       </div>

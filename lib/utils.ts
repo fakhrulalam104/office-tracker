@@ -1,11 +1,13 @@
-import type { DailyExpenseItem, DayStatus, ExpenseCategory, UserSettings } from "@/types";
+import type { DailyExpenseItem, DayStatus, ExpenseCategory, ExpenseCategoryOption, UserSettings } from "@/types";
 
 export const LUNCH_PRICE = 90;
 export const MONTH_DELAY_LIMIT = 150;
 export const COMMENT_MAX_LENGTH = 500;
 export const DAILY_EXPENSE_NOTE_MAX_LENGTH = 300;
+export const EXPENSE_CATEGORY_LABEL_MAX_LENGTH = 40;
+export const EXPENSE_CATEGORY_LIMIT = 20;
 export const DAY_STATUSES: DayStatus[] = ["work", "holiday", "sick", "leave"];
-export const EXPENSE_CATEGORIES: Array<{ value: ExpenseCategory; label: string }> = [
+export const EXPENSE_CATEGORIES: ExpenseCategoryOption[] = [
   { value: "transport", label: "Transport" },
   { value: "food", label: "Food" },
   { value: "supplies", label: "Office Supplies" },
@@ -17,6 +19,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   lunchPrice: LUNCH_PRICE,
   delayLimit: MONTH_DELAY_LIMIT,
   currency: "BDT",
+  expenseCategories: EXPENSE_CATEGORIES,
   reminderEnabled: false,
   reminderTime: "18:00"
 };
@@ -283,12 +286,71 @@ export function normalizeDailyExpenseNote(value: unknown) {
   return value.trim().slice(0, DAILY_EXPENSE_NOTE_MAX_LENGTH);
 }
 
-export function normalizeExpenseCategory(value: unknown): ExpenseCategory {
-  return EXPENSE_CATEGORIES.some((category) => category.value === value) ? (value as ExpenseCategory) : "other";
+export function normalizeExpenseCategoryLabel(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().replace(/\s+/g, " ").slice(0, EXPENSE_CATEGORY_LABEL_MAX_LENGTH);
 }
 
-export function expenseCategoryLabel(value: ExpenseCategory) {
-  return EXPENSE_CATEGORIES.find((category) => category.value === value)?.label ?? "Other";
+export function normalizeExpenseCategoryValue(value: unknown) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, EXPENSE_CATEGORY_LABEL_MAX_LENGTH);
+}
+
+function labelFromCategoryValue(value: string) {
+  return value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function normalizeExpenseCategoryOptions(value: unknown): ExpenseCategoryOption[] {
+  const input = Array.isArray(value) ? value : EXPENSE_CATEGORIES;
+  const seen = new Set<string>();
+  const categories: ExpenseCategoryOption[] = [];
+
+  for (const item of input) {
+    const rawLabel = readObjectValue(item, "label");
+    const rawValue = readObjectValue(item, "value");
+    const label = normalizeExpenseCategoryLabel(rawLabel) || normalizeExpenseCategoryLabel(rawValue);
+    const valueFromLabel = normalizeExpenseCategoryValue(label);
+    const normalizedValue = normalizeExpenseCategoryValue(rawValue) || valueFromLabel;
+
+    if (!label || !normalizedValue || seen.has(normalizedValue)) {
+      continue;
+    }
+
+    seen.add(normalizedValue);
+    categories.push({ value: normalizedValue, label });
+
+    if (categories.length >= EXPENSE_CATEGORY_LIMIT) {
+      break;
+    }
+  }
+
+  return categories.length > 0 ? categories : EXPENSE_CATEGORIES;
+}
+
+export function normalizeExpenseCategory(value: unknown): ExpenseCategory {
+  const normalized = normalizeExpenseCategoryValue(value);
+  return normalized || "other";
+}
+
+export function expenseCategoryLabel(value: ExpenseCategory, categories: ExpenseCategoryOption[] = EXPENSE_CATEGORIES) {
+  const normalized = normalizeExpenseCategory(value);
+  const options = normalizeExpenseCategoryOptions(categories);
+  return options.find((category) => category.value === normalized)?.label ?? (labelFromCategoryValue(normalized) || "Other");
 }
 
 function readObjectValue(value: unknown, key: string) {
@@ -337,6 +399,7 @@ export function normalizeUserSettings(value: Partial<UserSettings> | null | unde
   const lunchPrice = normalizeDailyExpenseAmount(value?.lunchPrice || DEFAULT_USER_SETTINGS.lunchPrice);
   const delayLimit = clamp(Number(value?.delayLimit ?? DEFAULT_USER_SETTINGS.delayLimit), 1, 1000);
   const currency = typeof value?.currency === "string" && value.currency.trim() ? value.currency.trim().slice(0, 8).toUpperCase() : "BDT";
+  const expenseCategories = normalizeExpenseCategoryOptions(value?.expenseCategories);
   const reminderTime =
     typeof value?.reminderTime === "string" && /^\d{2}:\d{2}$/.test(value.reminderTime) ? value.reminderTime : "18:00";
 
@@ -345,6 +408,7 @@ export function normalizeUserSettings(value: Partial<UserSettings> | null | unde
     lunchPrice,
     delayLimit,
     currency,
+    expenseCategories,
     reminderEnabled: Boolean(value?.reminderEnabled),
     reminderTime
   };
