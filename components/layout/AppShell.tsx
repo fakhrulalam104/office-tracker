@@ -14,6 +14,7 @@ function LineIcon({
   name:
     | "dashboard"
     | "expenses"
+    | "features"
     | "insights"
     | "approvals"
     | "notifications"
@@ -50,6 +51,15 @@ function LineIcon({
         <>
           <path d="M12 3v18" {...common} />
           <path d="M17 7.5c-.8-1.2-2.4-2-4.4-2-2.5 0-4.1 1.1-4.1 2.8 0 4.1 8.5 1.9 8.5 6.4 0 1.9-1.8 3.1-4.5 3.1-2.2 0-4-.8-5-2.2" {...common} />
+        </>
+      ) : null}
+      {name === "features" ? (
+        <>
+          <rect x="4" y="4" width="6" height="6" rx="1.4" {...common} />
+          <rect x="14" y="4" width="6" height="6" rx="1.4" {...common} />
+          <rect x="4" y="14" width="6" height="6" rx="1.4" {...common} />
+          <path d="M17 14v6" {...common} />
+          <path d="M14 17h6" {...common} />
         </>
       ) : null}
       {name === "insights" ? (
@@ -149,6 +159,7 @@ function LineIcon({
 const trackingNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const },
   { href: "/expenses", label: "Expenses", icon: "expenses" as const },
+  { href: "/features", label: "Features", icon: "features" as const },
   { href: "/insights", label: "Insights", icon: "insights" as const },
   { href: "/approvals", label: "Approvals", icon: "approvals" as const },
   { href: "/notifications", label: "Notifications", icon: "notifications" as const },
