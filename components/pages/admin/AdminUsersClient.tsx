@@ -10,6 +10,7 @@ type AdminUserItem = {
   name: string;
   email: string;
   role: UserRole;
+  designation: string;
   organizationId?: string | null;
   organizationName?: string | null;
   active: boolean;
@@ -46,7 +47,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
     }
 
     return users.filter((user) =>
-      [user.name, user.email, user.organizationName ?? "", user.role].some((value) => value.toLowerCase().includes(query))
+      [user.name, user.email, user.designation, user.organizationName ?? "", user.role].some((value) => value.toLowerCase().includes(query))
     );
   }, [search, users]);
 
@@ -88,6 +89,7 @@ export function AdminUsersClient({ currentRole, currentUserId }: { currentRole: 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
                     <p className="mt-1 truncate text-sm text-slate-500">{user.email}</p>
+                    <p className="mt-1 truncate text-xs font-medium text-slate-400">{user.designation || "User"}</p>
                   </div>
                   <div className="text-sm text-slate-600">{user.organizationName ?? "No organization"}</div>
                   <div>

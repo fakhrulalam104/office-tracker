@@ -113,6 +113,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             email: user.email,
             role: normalizeUserRole(user.role, user.email),
+            designation: user.designation ?? "User",
             organizationId: user.organizationId?.toString() ?? null
           };
         } catch (error) {
@@ -136,14 +137,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.name = user.name;
         token.email = user.email;
         token.role = normalizeUserRole(user.role, user.email);
+        token.designation = user.designation ?? "User";
         token.organizationId = user.organizationId ?? null;
       } else if (token.userId) {
         await connectToDatabase();
-        const currentUser = (await User.findById(token.userId).select("name email role organizationId").lean()) as
+        const currentUser = (await User.findById(token.userId).select("name email role designation organizationId").lean()) as
           | {
               name: string;
               email: string;
               role?: string;
+              designation?: string | null;
               organizationId?: { toString(): string } | null;
             }
           | null;
@@ -151,6 +154,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.name = currentUser.name;
           token.email = currentUser.email;
           token.role = normalizeUserRole(currentUser.role, currentUser.email);
+          token.designation = currentUser.designation?.trim() || "User";
           token.organizationId = currentUser.organizationId?.toString() ?? null;
         }
       }
@@ -175,6 +179,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name ?? session.user.name ?? null;
         session.user.email = token.email ?? session.user.email ?? null;
         session.user.role = normalizeUserRole(token.role, session.user.email);
+        session.user.designation = token.designation?.trim() || "User";
         session.user.organizationId = token.organizationId ?? null;
       }
 

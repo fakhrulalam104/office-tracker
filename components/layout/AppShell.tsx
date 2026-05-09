@@ -178,7 +178,17 @@ const adminNavItems = [
   { href: "/profile", label: "Profile", icon: "profile" as const }
 ];
 
-export function AppShell({ userName, role = "member", children }: { userName: string; role?: UserRole; children: ReactNode }) {
+export function AppShell({
+  userName,
+  designation = "User",
+  role = "member",
+  children
+}: {
+  userName: string;
+  designation?: string;
+  role?: UserRole;
+  children: ReactNode;
+}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -220,8 +230,8 @@ export function AppShell({ userName, role = "member", children }: { userName: st
               </span>
               {!collapsed ? (
                 <span className="hidden min-w-0 lg:block">
-                  <span className="block truncate text-sm font-semibold">Office Tracker</span>
-                  <span className="block truncate text-xs text-slate-400">{userName}</span>
+                  <span className="block truncate text-sm font-semibold">{userName}</span>
+                  <span className="block truncate text-xs text-slate-400">{designation.trim() || "User"}</span>
                 </span>
               ) : null}
             </Link>

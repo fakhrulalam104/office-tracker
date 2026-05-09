@@ -68,6 +68,7 @@ export type AppUser = {
   name: string;
   email: string;
   role: UserRole;
+  designation: string;
   organizationId?: string | null;
 };
 

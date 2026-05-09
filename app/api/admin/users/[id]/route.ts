@@ -9,6 +9,11 @@ import { User } from "@/models/User";
 
 export const runtime = "nodejs";
 
+function normalizeDesignation(value: unknown) {
+  const designation = typeof value === "string" ? value.trim().slice(0, 80) : "";
+  return designation || "User";
+}
+
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   try {
     const currentUser = await requireManager();
@@ -20,6 +25,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
           name: string;
           email: string;
           role?: string;
+          designation?: string | null;
           organizationId?: unknown;
           active?: boolean;
           createdAt?: Date;
@@ -39,6 +45,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
         name: user.name,
         email: user.email,
         role: normalizeUserRole(user.role, user.email),
+        designation: user.designation?.trim() || "User",
         organizationId: user.organizationId ? String(user.organizationId) : null,
         active: user.active !== false,
         createdAt: user.createdAt?.toISOString?.() ?? null
@@ -86,6 +93,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       user.role = nextRole;
     }
 
+    if (typeof body?.designation === "string") {
+      if (currentUser.role !== "super_admin") {
+        return NextResponse.json({ message: "Only super admins can change designations" }, { status: 403 });
+      }
+      user.designation = normalizeDesignation(body.designation);
+    }
+
     if (typeof body?.active === "boolean") {
       user.active = body.active;
     }
@@ -110,7 +124,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       action: "user.updated",
       entityType: "user",
       entityId: String(user._id),
-      details: { role: user.role, active: user.active }
+      details: { role: user.role, designation: user.designation ?? "User", active: user.active }
     });
 
     return NextResponse.json({
@@ -119,6 +133,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         name: user.name,
         email: user.email,
         role: normalizeUserRole(user.role, user.email),
+        designation: user.designation?.trim() || "User",
         organizationId: user.organizationId ? String(user.organizationId) : null,
         active: user.active !== false
       }

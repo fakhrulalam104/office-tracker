@@ -14,6 +14,7 @@ export async function requireUser() {
     name: session.user.name ?? "Team member",
     email: session.user.email ?? "",
     role: normalizeUserRole(session.user.role, session.user.email),
+    designation: session.user.designation?.trim() || "User",
     organizationId: session.user.organizationId ?? null
   };
 }

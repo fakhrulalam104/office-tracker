@@ -10,6 +10,7 @@ type AdminUserDetail = {
   name: string;
   email: string;
   role: UserRole;
+  designation: string;
   organizationId?: string | null;
   active: boolean;
   createdAt?: string | null;
@@ -38,6 +39,7 @@ export function AdminUserFormClient({
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [designation, setDesignation] = useState("User");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("member");
   const [organizationId, setOrganizationId] = useState("");
@@ -45,6 +47,7 @@ export function AdminUserFormClient({
 
   const assignableRoles = useMemo(() => roleOptions.filter((item) => canAssignRole(currentRole, item)), [currentRole]);
   const isSelf = user?.id === currentUserId;
+  const canEditRole = !(mode === "edit" && (isSelf || user?.role === "super_admin"));
 
   useEffect(() => {
     async function loadFormData() {
@@ -69,6 +72,7 @@ export function AdminUserFormClient({
           setUser(userData.user);
           setName(userData.user.name);
           setEmail(userData.user.email);
+          setDesignation(userData.user.designation || "User");
           setRole(userData.user.role === "super_admin" ? "owner" : userData.user.role);
           setOrganizationId(userData.user.organizationId ?? "");
           setActive(userData.user.active);
@@ -93,10 +97,17 @@ export function AdminUserFormClient({
     try {
       const payload: Record<string, unknown> = {
         name: name.trim(),
-        role,
         organizationId,
         active
       };
+
+      if (canEditRole) {
+        payload.role = role;
+      }
+
+      if (currentRole === "super_admin") {
+        payload.designation = designation.trim() || "User";
+      }
 
       if (mode === "create") {
         payload.email = email.trim();
@@ -189,6 +200,19 @@ export function AdminUserFormClient({
               />
             </label>
 
+            {currentRole === "super_admin" ? (
+              <label className="space-y-2">
+                <span className="text-sm font-semibold text-slate-700">Designation</span>
+                <input
+                  value={designation}
+                  onChange={(event) => setDesignation(event.target.value)}
+                  maxLength={80}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  placeholder="User"
+                />
+              </label>
+            ) : null}
+
             <label className="space-y-2">
               <span className="text-sm font-semibold text-slate-700">{mode === "create" ? "Initial password" : "Reset password"}</span>
               <input
@@ -201,7 +225,7 @@ export function AdminUserFormClient({
               />
             </label>
 
-            {mode === "edit" && (isSelf || user?.role === "super_admin") ? (
+            {!canEditRole ? (
               <label className="space-y-2">
                 <span className="text-sm font-semibold text-slate-700">Role</span>
                 <input

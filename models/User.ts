@@ -23,6 +23,11 @@ const UserSchema = new Schema(
       enum: ["super_admin", "owner", "admin", "member"],
       default: "member"
     },
+    designation: {
+      type: String,
+      default: "User",
+      trim: true
+    },
     organizationId: {
       type: Schema.Types.ObjectId,
       ref: "Organization",

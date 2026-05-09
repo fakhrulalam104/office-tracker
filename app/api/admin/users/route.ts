@@ -9,6 +9,11 @@ import { User } from "@/models/User";
 
 export const runtime = "nodejs";
 
+function normalizeDesignation(value: unknown) {
+  const designation = typeof value === "string" ? value.trim().slice(0, 80) : "";
+  return designation || "User";
+}
+
 export async function GET() {
   try {
     const currentUser = await requireManager();
@@ -28,6 +33,7 @@ export async function GET() {
         name: user.name,
         email: user.email,
         role: normalizeUserRole(user.role, user.email),
+        designation: user.designation?.trim() || "User",
         organizationId: user.organizationId ? String(user.organizationId) : null,
         organizationName: user.organizationId ? organizationMap.get(String(user.organizationId)) ?? null : null,
         active: user.active !== false,
@@ -50,6 +56,7 @@ export async function POST(request: Request) {
     const name = typeof body?.name === "string" ? body.name.trim() : "";
     const email = typeof body?.email === "string" ? body.email.toLowerCase().trim() : "";
     const role = normalizeUserRole(body?.role, body?.email);
+    const designation = currentUser.role === "super_admin" ? normalizeDesignation(body?.designation) : "User";
     const password = typeof body?.password === "string" && body.password.length >= 8 ? body.password : `${Date.now()}-invite-only`;
     const organizationId =
       currentUser.role === "super_admin"
@@ -80,6 +87,7 @@ export async function POST(request: Request) {
       email,
       password: await bcrypt.hash(password, 12),
       role,
+      designation,
       organizationId,
       active: true
     });
@@ -90,7 +98,7 @@ export async function POST(request: Request) {
       action: "user.created",
       entityType: "user",
       entityId: String(user._id),
-      details: { email, role, organizationId }
+      details: { email, role, designation, organizationId }
     });
 
     return NextResponse.json({
@@ -99,6 +107,7 @@ export async function POST(request: Request) {
         name: user.name,
         email: user.email,
         role: normalizeUserRole(user.role, user.email),
+        designation: user.designation?.trim() || "User",
         organizationId: user.organizationId ? String(user.organizationId) : null,
         active: user.active !== false
       }

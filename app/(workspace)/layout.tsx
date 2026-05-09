@@ -5,5 +5,9 @@ import { requireUser } from "@/lib/require-auth";
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
 
-  return <AppShell userName={user.name} role={user.role}>{children}</AppShell>;
+  return (
+    <AppShell userName={user.name} designation={user.designation} role={user.role}>
+      {children}
+    </AppShell>
+  );
 }
