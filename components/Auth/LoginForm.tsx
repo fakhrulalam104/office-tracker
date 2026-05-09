@@ -101,7 +101,7 @@ export function LoginForm({ registered }: { registered: boolean }) {
         setErrors({
           form:
             result.error === "Configuration"
-              ? "Sign-in is not configured correctly on the server. Check the Vercel auth secret."
+              ? "Sign-in is not configured correctly on the server. Check the auth environment and database connection."
               : "Invalid email or password."
         });
         return;

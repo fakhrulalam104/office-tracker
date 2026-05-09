@@ -36,6 +36,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
   useEffect(() => {
     setMonth(initialMonth);
   }, [initialMonth]);

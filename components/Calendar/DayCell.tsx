@@ -1,7 +1,22 @@
 "use client";
 
-import { dayStatusLabel, defaultDayStatusForDate, normalizeDailyExpenses, normalizeDayStatus, totalDailyExpenses } from "@/lib/utils";
+import { dayStatusLabel, defaultDayStatusForDate, normalizeDayStatus } from "@/lib/utils";
 import type { EntryItem } from "@/types";
+
+function CateringIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+      <path
+        d="M5 17h14M7 17a5 5 0 0 1 10 0M12 9v-2M10 7h4M4 20h16"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
 
 export function DayCell({
   day,
@@ -25,12 +40,8 @@ export function DayCell({
   const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey, { weeklyHolidays });
   const delayMinutes = dayStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
   const hadLunch = dayStatus === "work" ? entry?.hadLunch ?? false : false;
-  const dailyExpenses = normalizeDailyExpenses(entry?.dailyExpenses);
-  const dailyExpenseAmount = totalDailyExpenses(dailyExpenses);
   const hasDelay = delayMinutes > 0;
-  const hasLunchOnly = hadLunch && !hasDelay;
-  const hasDailyExpense = dailyExpenses.length > 0;
-  const warningTone = monthTotalDelayMinutes >= 130 && dayStatus === "work" && Boolean(entry);
+  const warningTone = monthTotalDelayMinutes >= 130 && dayStatus === "work" && Boolean(entry) && !hasDelay;
 
   const cellClass = warningTone
     ? "border-red-200 bg-red-50/80"
@@ -42,24 +53,22 @@ export function DayCell({
           ? "border-slate-200 bg-slate-100/90"
           : hasDelay
             ? "border-amber-200 bg-amber-50/80"
-            : hasLunchOnly
-              ? "border-sky-200 bg-sky-50/80"
-              : entry
-                ? "border-indigo-200 bg-indigo-50/80"
-                : "border-slate-200 bg-white";
+            : entry
+              ? "border-indigo-200 bg-indigo-50/80"
+              : "border-slate-200 bg-white";
 
   const dotClass =
     dayStatus === "holiday"
       ? "bg-emerald-500"
       : dayStatus === "sick"
         ? "bg-violet-500"
-        : dayStatus === "leave"
-          ? "bg-slate-500"
-          : hasDelay
-            ? "bg-amber-500"
-            : hadLunch
-              ? "bg-sky-500"
-              : "bg-indigo-500";
+          : dayStatus === "leave"
+            ? "bg-slate-500"
+            : hasDelay
+              ? "bg-amber-500"
+              : hadLunch
+                ? "bg-sky-500"
+                : "bg-indigo-500";
 
   const badgeClass =
     dayStatus === "holiday"
@@ -70,9 +79,7 @@ export function DayCell({
           ? "bg-slate-200 text-slate-700"
           : warningTone
             ? "bg-red-100 text-red-700"
-              : hasDelay
-                ? "bg-amber-100 text-amber-700"
-                : "bg-indigo-100 text-indigo-700";
+              : "bg-indigo-100 text-indigo-700";
 
   const todayClass = isToday ? "ring-2 ring-sky-500 ring-offset-2 ring-offset-slate-50" : "";
   const todayLabelClass = isToday ? "text-sky-700" : "";
@@ -95,24 +102,22 @@ export function DayCell({
         >
           {day}
         </span>
-        {entry ? <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} aria-hidden="true" /> : null}
+        <span className="flex items-center gap-1">
+          {hadLunch ? (
+            <span
+              className="grid h-7 w-7 place-items-center rounded-full border border-sky-200 bg-white text-sky-600 shadow-sm"
+              aria-label="Meal marked"
+            >
+              <CateringIcon />
+            </span>
+          ) : null}
+          {entry ? <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} aria-hidden="true" /> : null}
+        </span>
       </div>
 
       <div className="mt-4 space-y-1">
         {isToday ? <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${todayLabelClass}`}>Today</p> : null}
         {dayStatus !== "work" ? <p className="text-xs font-medium text-slate-700">{dayStatusLabel(dayStatus)}</p> : null}
-
-        {delayMinutes > 0 ? (
-          <p className={`text-xs font-medium ${warningTone ? "text-red-700" : "text-amber-700"}`}>+{delayMinutes} min</p>
-        ) : null}
-
-        {hadLunch ? <p className="text-xs font-medium text-sky-700">Lunch marked</p> : null}
-
-        {hasDailyExpense ? (
-          <p className="text-xs font-medium text-slate-700">
-            Expenses{dailyExpenseAmount > 0 ? `: ${dailyExpenseAmount.toLocaleString("en-US")} BDT` : `: ${dailyExpenses.length} notes`}
-          </p>
-        ) : null}
       </div>
 
       {entry ? (
@@ -120,13 +125,7 @@ export function DayCell({
           {dayStatus !== "work" ? (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>{dayStatusLabel(dayStatus)}</span>
           ) : null}
-          {dayStatus === "work" && delayMinutes > 0 ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>Delay</span>
-          ) : null}
-          {dayStatus === "work" && hadLunch ? (
-            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">Lunch</span>
-          ) : null}
-          {dayStatus === "work" && !delayMinutes && !hadLunch ? (
+          {dayStatus === "work" && !delayMinutes ? (
             <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Work</span>
           ) : null}
         </div>

@@ -167,28 +167,124 @@ function LineIcon({
   );
 }
 
-const trackingNavItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const },
-  { href: "/tasks", label: "Tasks", icon: "tasks" as const, memberOnly: true },
-  { href: "/expenses", label: "Expenses", icon: "expenses" as const },
-  { href: "/features", label: "Features", icon: "features" as const },
-  { href: "/insights", label: "Insights", icon: "insights" as const },
-  { href: "/approvals", label: "Approvals", icon: "approvals" as const },
-  { href: "/notifications", label: "Notifications", icon: "notifications" as const },
-  { href: "/reports", label: "Reports", icon: "reports" as const },
-  { href: "/profile", label: "Profile", icon: "profile" as const },
-  { href: "/settings", label: "Settings", icon: "settings" as const }
-];
+type NavLinkItem = {
+  kind: "link";
+  href: string;
+  label: string;
+  icon: Parameters<typeof LineIcon>[0]["name"];
+};
 
-const adminNavItems = [
-  { href: "/admin", label: "Admin Dashboard", icon: "dashboard" as const },
-  { href: "/admin/users", label: "Users", icon: "users" as const },
-  { href: "/admin/organizations", label: "Organizations", icon: "building" as const },
-  { href: "/admin/approvals", label: "Approvals", icon: "team" as const },
-  { href: "/admin/notifications", label: "Notifications", icon: "bell" as const },
-  { href: "/admin/audit", label: "Audit Log", icon: "shield" as const },
-  { href: "/profile", label: "Profile", icon: "profile" as const }
-];
+type NavGroupItem = {
+  kind: "group";
+  label: string;
+  icon: Parameters<typeof LineIcon>[0]["name"];
+  items: NavLinkItem[];
+};
+
+type NavItem = NavLinkItem | NavGroupItem;
+
+function linkItem(item: Omit<NavLinkItem, "kind">): NavLinkItem {
+  return { kind: "link", ...item };
+}
+
+function groupItem(item: Omit<NavGroupItem, "kind">): NavGroupItem {
+  return { kind: "group", ...item };
+}
+
+function isActivePath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function isActiveNavItem(pathname: string, item: NavItem) {
+  return item.kind === "link" ? isActivePath(pathname, item.href) : item.items.some((child) => isActivePath(pathname, child.href));
+}
+
+function getNavItemsForRole(role: UserRole): NavItem[] {
+  if (role === "super_admin") {
+    return [
+      linkItem({ href: "/admin", label: "Admin", icon: "dashboard" }),
+      linkItem({ href: "/admin/users", label: "Users", icon: "users" }),
+      linkItem({ href: "/admin/organizations", label: "Organizations", icon: "building" }),
+      groupItem({
+        label: "Operations",
+        icon: "shield",
+        items: [
+          linkItem({ href: "/admin/approvals", label: "Approvals", icon: "team" }),
+          linkItem({ href: "/admin/notifications", label: "Notifications", icon: "bell" }),
+          linkItem({ href: "/admin/audit", label: "Audit Log", icon: "shield" })
+        ]
+      }),
+      linkItem({ href: "/profile", label: "Profile", icon: "profile" })
+    ];
+  }
+
+  if (canManageTeam(role)) {
+    return [
+      linkItem({ href: "/dashboard", label: "Dashboard", icon: "dashboard" }),
+      groupItem({
+        label: "Team",
+        icon: "users",
+        items: [
+          linkItem({ href: "/admin", label: "Team Dashboard", icon: "dashboard" }),
+          linkItem({ href: "/admin/users", label: "Users", icon: "users" }),
+          linkItem({ href: "/admin/organizations", label: "Organizations", icon: "building" })
+        ]
+      }),
+      groupItem({
+        label: "Reviews",
+        icon: "approvals",
+        items: [
+          linkItem({ href: "/admin/approvals", label: "Approvals", icon: "team" }),
+          linkItem({ href: "/admin/notifications", label: "Notifications", icon: "bell" }),
+          linkItem({ href: "/admin/audit", label: "Audit Log", icon: "shield" })
+        ]
+      }),
+      linkItem({ href: "/features", label: "Tools", icon: "features" }),
+      groupItem({
+        label: "Work",
+        icon: "reports",
+        items: [
+          linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
+          linkItem({ href: "/reports", label: "Reports", icon: "reports" })
+        ]
+      }),
+      groupItem({
+        label: "Account",
+        icon: "profile",
+        items: [
+          linkItem({ href: "/profile", label: "Profile", icon: "profile" }),
+          linkItem({ href: "/expenses", label: "Expenses", icon: "expenses" }),
+          linkItem({ href: "/settings", label: "Settings", icon: "settings" })
+        ]
+      })
+    ];
+  }
+
+  return [
+    linkItem({ href: "/dashboard", label: "Dashboard", icon: "dashboard" }),
+    linkItem({ href: "/tasks", label: "Tasks", icon: "tasks" }),
+    linkItem({ href: "/features", label: "Tools", icon: "features" }),
+    groupItem({
+      label: "Updates",
+      icon: "notifications",
+      items: [
+        linkItem({ href: "/approvals", label: "Approvals", icon: "approvals" }),
+        linkItem({ href: "/notifications", label: "Notifications", icon: "notifications" }),
+        linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
+        linkItem({ href: "/reports", label: "Reports", icon: "reports" })
+      ]
+    }),
+    groupItem({
+      label: "Account",
+      icon: "profile",
+      items: [
+        linkItem({ href: "/profile", label: "Profile", icon: "profile" }),
+        linkItem({ href: "/expenses", label: "Expenses", icon: "expenses" }),
+        linkItem({ href: "/settings", label: "Settings", icon: "settings" })
+      ]
+    })
+  ];
+}
 
 export function AppShell({
   userName,
@@ -204,16 +300,13 @@ export function AppShell({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const visibleNavItems =
-    role === "super_admin"
-      ? adminNavItems
-      : canManageTeam(role)
-        ? [...trackingNavItems.filter((item) => !("memberOnly" in item && item.memberOnly)), ...adminNavItems]
-        : trackingNavItems;
+  const visibleNavItems = getNavItemsForRole(role);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   useEffect(() => {
     setPendingHref(null);
-  }, [pathname]);
+    setOpenGroup(null);
+  }, [pathname, role]);
 
   function startNavigationFeedback(href: string) {
     if (href === pathname || pathname.startsWith(`${href}/`)) {
@@ -226,11 +319,11 @@ export function AppShell({
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
       <aside
-        className={`sticky top-0 z-40 flex border-b border-slate-200 bg-slate-950 text-white lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:border-slate-800 ${
+        className={`sticky top-0 z-40 flex border-b border-slate-200 bg-slate-950 text-white lg:h-screen lg:overflow-hidden lg:flex-col lg:border-b-0 lg:border-r lg:border-slate-800 ${
           collapsed ? "lg:w-[88px]" : "lg:w-[264px]"
         } transition-[width] duration-200`}
       >
-        <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:flex-col lg:items-stretch lg:gap-5 lg:p-5">
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-4 lg:h-full lg:min-h-0 lg:flex-col lg:items-stretch lg:gap-5 lg:p-5">
           <div className={`flex items-center gap-3 ${collapsed ? "lg:flex-col lg:justify-center" : "lg:justify-between"}`}>
             <Link
               href={getDefaultHomePath(role)}
@@ -259,9 +352,60 @@ export function AppShell({
             </button>
           </div>
 
-          <nav className="flex flex-1 items-center gap-2 overflow-x-auto lg:block lg:space-y-2 lg:overflow-visible">
+          <nav className="flex flex-1 items-center gap-2 overflow-x-auto lg:block lg:min-h-0 lg:space-y-2 lg:overflow-visible">
             {visibleNavItems.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = isActiveNavItem(pathname, item);
+
+              if (item.kind === "group") {
+                const expanded = openGroup === item.label && !collapsed;
+
+                return (
+                  <div key={item.label} className="shrink-0 lg:w-full">
+                    <button
+                      type="button"
+                      onClick={() => setOpenGroup((value) => (value === item.label ? null : item.label))}
+                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
+                        active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"
+                      }`}
+                      aria-expanded={expanded}
+                    >
+                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${active ? "bg-slate-100" : "bg-white/10"}`}>
+                        <LineIcon name={item.icon} />
+                      </span>
+                      {!collapsed ? (
+                        <>
+                          <span className="hidden flex-1 text-left lg:inline">{item.label}</span>
+                          <span className={`hidden text-slate-400 transition lg:block ${expanded ? "rotate-90" : ""}`}>
+                            <LineIcon name="chevron" />
+                          </span>
+                        </>
+                      ) : null}
+                    </button>
+
+                    {expanded ? (
+                      <div className="fixed left-4 right-4 top-[76px] z-50 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-2xl lg:static lg:mt-1 lg:block lg:space-y-1 lg:border-0 lg:bg-transparent lg:p-0 lg:pl-11 lg:shadow-none">
+                        {item.items.map((child) => {
+                          const childActive = isActivePath(pathname, child.href);
+
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => startNavigationFeedback(child.href)}
+                              className={`block rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                childActive ? "bg-white/90 text-slate-950" : "text-slate-400 hover:bg-white/10 hover:text-white"
+                              }`}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
