@@ -38,7 +38,7 @@ export async function GET() {
         totalOrganizations: organizations.length,
         pendingApprovals: pendingApprovals.length,
         unreadNotifications: notifications.filter((notification) => !notification.readAt).length,
-        roleDistribution: ["super_admin", "owner", "admin", "member"].map((role) => ({
+        roleDistribution: ["super_admin", "owner", "admin", "manager", "hr", "member"].map((role) => ({
           role,
           count: users.filter((user) => (user.role ?? "member") === role).length
         })),

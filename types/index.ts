@@ -1,5 +1,5 @@
 export type DayStatus = "work" | "holiday" | "sick" | "leave";
-export type UserRole = "super_admin" | "owner" | "admin" | "member";
+export type UserRole = "super_admin" | "owner" | "admin" | "manager" | "hr" | "member";
 
 export type ExpenseCategory = string;
 

@@ -3,7 +3,7 @@ import { getToken } from "next-auth/jwt";
 import { getAuthSecret, getAuthSecretSource } from "@/lib/auth-env";
 import { authDebug, authDebugError } from "@/lib/auth-debug";
 
-const protectedRoutes = ["/dashboard", "/expenses", "/insights", "/approvals", "/notifications", "/reports", "/profile", "/settings", "/admin"];
+const protectedRoutes = ["/dashboard", "/tasks", "/expenses", "/insights", "/approvals", "/notifications", "/reports", "/profile", "/settings", "/admin"];
 const protectedApiPrefixes = [
   "/api/entries",
   "/api/summary",

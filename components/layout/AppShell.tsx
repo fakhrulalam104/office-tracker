@@ -13,6 +13,7 @@ function LineIcon({
 }: {
   name:
     | "dashboard"
+    | "tasks"
     | "expenses"
     | "features"
     | "insights"
@@ -45,6 +46,16 @@ function LineIcon({
           <rect x="13" y="4" width="7" height="5" rx="1.5" {...common} />
           <rect x="13" y="11" width="7" height="9" rx="1.5" {...common} />
           <rect x="4" y="13" width="7" height="7" rx="1.5" {...common} />
+        </>
+      ) : null}
+      {name === "tasks" ? (
+        <>
+          <path d="M8 6h12" {...common} />
+          <path d="M8 12h12" {...common} />
+          <path d="M8 18h12" {...common} />
+          <path d="m4 6 .8.8L6.5 5" {...common} />
+          <path d="m4 12 .8.8 1.7-1.8" {...common} />
+          <path d="m4 18 .8.8 1.7-1.8" {...common} />
         </>
       ) : null}
       {name === "expenses" ? (
@@ -158,6 +169,7 @@ function LineIcon({
 
 const trackingNavItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const },
+  { href: "/tasks", label: "Tasks", icon: "tasks" as const, memberOnly: true },
   { href: "/expenses", label: "Expenses", icon: "expenses" as const },
   { href: "/features", label: "Features", icon: "features" as const },
   { href: "/insights", label: "Insights", icon: "insights" as const },
@@ -196,7 +208,7 @@ export function AppShell({
     role === "super_admin"
       ? adminNavItems
       : canManageTeam(role)
-        ? [...trackingNavItems, ...adminNavItems]
+        ? [...trackingNavItems.filter((item) => !("memberOnly" in item && item.memberOnly)), ...adminNavItems]
         : trackingNavItems;
 
   useEffect(() => {

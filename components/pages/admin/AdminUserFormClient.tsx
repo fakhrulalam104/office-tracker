@@ -16,7 +16,7 @@ type AdminUserDetail = {
   createdAt?: string | null;
 };
 
-const roleOptions: UserRole[] = ["member", "admin", "owner"];
+const roleOptions: UserRole[] = ["member", "hr", "manager", "admin", "owner"];
 
 export function AdminUserFormClient({
   mode,

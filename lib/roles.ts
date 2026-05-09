@@ -3,9 +3,11 @@ import type { UserRole } from "@/types";
 export const SUPER_ADMIN_EMAIL = "fakhrulalam104@gmail.com";
 const roleRank: Record<UserRole, number> = {
   member: 1,
-  admin: 2,
-  owner: 3,
-  super_admin: 4
+  hr: 2,
+  manager: 2,
+  admin: 3,
+  owner: 4,
+  super_admin: 5
 };
 
 export function normalizeEmail(value: unknown) {
@@ -24,6 +26,8 @@ export function normalizeUserRole(value: unknown, email?: unknown): UserRole {
   switch (value) {
     case "owner":
     case "admin":
+    case "manager":
+    case "hr":
     case "member":
       return value;
     default:
@@ -32,11 +36,11 @@ export function normalizeUserRole(value: unknown, email?: unknown): UserRole {
 }
 
 export function canManageTeam(role: UserRole) {
-  return role === "super_admin" || role === "owner" || role === "admin";
+  return role === "super_admin" || role === "owner" || role === "admin" || role === "manager" || role === "hr";
 }
 
 export function canManageSettings(role: UserRole) {
-  return role === "super_admin" || role === "owner" || role === "admin";
+  return role === "super_admin" || role === "owner" || role === "admin" || role === "manager" || role === "hr";
 }
 
 export function canReviewApprovals(role: UserRole) {
@@ -61,10 +65,14 @@ export function canAssignRole(actorRole: UserRole, nextRole: UserRole) {
   }
 
   if (actorRole === "owner") {
-    return nextRole === "admin" || nextRole === "member";
+    return nextRole === "admin" || nextRole === "manager" || nextRole === "hr" || nextRole === "member";
   }
 
   if (actorRole === "admin") {
+    return nextRole === "manager" || nextRole === "hr" || nextRole === "member";
+  }
+
+  if (actorRole === "manager" || actorRole === "hr") {
     return nextRole === "member";
   }
 
