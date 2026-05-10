@@ -24,10 +24,26 @@ const features = [
     description: "Keep text notes, links, tags, pinned items, and archived references in one focused workspace.",
     status: "Available",
     icon: "notes"
+  },
+  {
+    href: "/features/developer-tools",
+    label: "Developer Tools",
+    description: "JSON, JWT, encoders, hashes, regex, timestamps, colors, diffs, markdown, API tests, QR, and mock data.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
 function FeatureIcon({ name }: { name: string }) {
+  if (name === "tools") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+        <path d="M8 7 4 12l4 5M16 7l4 5-4 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path d="m14 5-4 14" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
   if (name === "notes") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
