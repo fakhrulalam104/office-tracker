@@ -10,13 +10,26 @@ function normalizeText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
 
+const socialKeys = ["facebook", "teams", "whatsapp", "email", "linkedin", "github", "website", "skype", "telegram", "discord"];
+
+function normalizeSocialLinks(value: unknown) {
+  const source = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+  return Object.fromEntries(
+    socialKeys.map((key) => {
+      const rawValue = source[key];
+      return [key, typeof rawValue === "string" ? rawValue.trim().slice(0, 300) : ""];
+    })
+  );
+}
+
 export async function GET() {
   try {
     const currentUser = await requireAppUser();
     await connectToDatabase();
 
     const user = await User.findById(currentUser.id).select(
-      "name email role organizationId phone jobTitle department employeeCode location bio emergencyContactName emergencyContactPhone createdAt"
+      "name email role organizationId phone jobTitle department employeeCode location bio emergencyContactName emergencyContactPhone socialLinks createdAt"
     );
 
     if (!user) {
@@ -38,6 +51,7 @@ export async function GET() {
         bio: user.bio ?? "",
         emergencyContactName: user.emergencyContactName ?? "",
         emergencyContactPhone: user.emergencyContactPhone ?? "",
+        socialLinks: normalizeSocialLinks(user.socialLinks),
         createdAt: user.createdAt?.toISOString?.() ?? null
       }
     });
@@ -94,6 +108,8 @@ export async function PATCH(request: Request) {
     user.bio = normalizeText(body?.bio, 500);
     user.emergencyContactName = normalizeText(body?.emergencyContactName, 120);
     user.emergencyContactPhone = normalizeText(body?.emergencyContactPhone, 40);
+    user.socialLinks = normalizeSocialLinks(body?.socialLinks);
+    user.markModified("socialLinks");
 
     await user.save();
 
@@ -112,6 +128,7 @@ export async function PATCH(request: Request) {
         bio: user.bio ?? "",
         emergencyContactName: user.emergencyContactName ?? "",
         emergencyContactPhone: user.emergencyContactPhone ?? "",
+        socialLinks: normalizeSocialLinks(user.socialLinks),
         createdAt: user.createdAt?.toISOString?.() ?? null
       }
     });

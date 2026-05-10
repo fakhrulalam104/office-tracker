@@ -3,6 +3,7 @@ import type { UserRole } from "@/types";
 export const SUPER_ADMIN_EMAIL = "fakhrulalam104@gmail.com";
 const roleRank: Record<UserRole, number> = {
   member: 1,
+  coordinator: 1,
   hr: 2,
   manager: 2,
   admin: 3,
@@ -28,6 +29,7 @@ export function normalizeUserRole(value: unknown, email?: unknown): UserRole {
     case "admin":
     case "manager":
     case "hr":
+    case "coordinator":
     case "member":
       return value;
     default:
@@ -45,6 +47,10 @@ export function canManageSettings(role: UserRole) {
 
 export function canReviewApprovals(role: UserRole) {
   return canManageTeam(role);
+}
+
+export function canCoordinateTasks(role: UserRole) {
+  return role === "coordinator" || canManageTeam(role);
 }
 
 export function canAccessTracking(role: UserRole) {
@@ -65,15 +71,15 @@ export function canAssignRole(actorRole: UserRole, nextRole: UserRole) {
   }
 
   if (actorRole === "owner") {
-    return nextRole === "admin" || nextRole === "manager" || nextRole === "hr" || nextRole === "member";
+    return nextRole === "admin" || nextRole === "manager" || nextRole === "hr" || nextRole === "coordinator" || nextRole === "member";
   }
 
   if (actorRole === "admin") {
-    return nextRole === "manager" || nextRole === "hr" || nextRole === "member";
+    return nextRole === "manager" || nextRole === "hr" || nextRole === "coordinator" || nextRole === "member";
   }
 
   if (actorRole === "manager" || actorRole === "hr") {
-    return nextRole === "member";
+    return nextRole === "coordinator" || nextRole === "member";
   }
 
   return false;

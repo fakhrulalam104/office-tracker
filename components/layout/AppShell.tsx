@@ -27,6 +27,7 @@ function LineIcon({
     | "building"
     | "bell"
     | "shield"
+    | "search"
     | "chevron"
     | "logout";
 }) {
@@ -155,6 +156,12 @@ function LineIcon({
           <path d="m9.5 12 1.7 1.7 3.3-3.7" {...common} />
         </>
       ) : null}
+      {name === "search" ? (
+        <>
+          <circle cx="10.5" cy="10.5" r="5.8" {...common} />
+          <path d="m15 15 4 4" {...common} />
+        </>
+      ) : null}
       {name === "chevron" ? <path d="m9 6 6 6-6 6" {...common} /> : null}
       {name === "logout" ? (
         <>
@@ -183,6 +190,15 @@ type NavGroupItem = {
 
 type NavItem = NavLinkItem | NavGroupItem;
 
+type ActiveTaskTimer = {
+  taskId: string;
+  title: string;
+  startedAt: number;
+  accumulatedSeconds: number;
+};
+
+const activeTaskTimerKey = "office-tracker-active-task-timer";
+
 function linkItem(item: Omit<NavLinkItem, "kind">): NavLinkItem {
   return { kind: "link", ...item };
 }
@@ -199,10 +215,20 @@ function isActiveNavItem(pathname: string, item: NavItem) {
   return item.kind === "link" ? isActivePath(pathname, item.href) : item.items.some((child) => isActivePath(pathname, child.href));
 }
 
+function formatDuration(totalSeconds: number) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  return [hours, minutes, remainingSeconds].map((value) => String(value).padStart(2, "0")).join(":");
+}
+
 function getNavItemsForRole(role: UserRole): NavItem[] {
   if (role === "super_admin") {
     return [
       linkItem({ href: "/admin", label: "Admin", icon: "dashboard" }),
+      linkItem({ href: "/search", label: "Search", icon: "search" }),
       linkItem({ href: "/admin/users", label: "Users", icon: "users" }),
       linkItem({ href: "/admin/organizations", label: "Organizations", icon: "building" }),
       groupItem({
@@ -221,19 +247,37 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
   if (canManageTeam(role)) {
     return [
       linkItem({ href: "/dashboard", label: "Dashboard", icon: "dashboard" }),
+      linkItem({ href: "/search", label: "Search", icon: "search" }),
       groupItem({
-        label: "Team",
+        label: "People",
         icon: "users",
         items: [
-          linkItem({ href: "/admin", label: "Team Dashboard", icon: "dashboard" }),
+          linkItem({ href: "/directory", label: "Directory", icon: "users" }),
           linkItem({ href: "/admin/users", label: "Users", icon: "users" }),
           linkItem({ href: "/admin/organizations", label: "Organizations", icon: "building" })
         ]
       }),
       groupItem({
-        label: "Reviews",
+        label: "Work",
+        icon: "tasks",
+        items: [
+          linkItem({ href: "/tasks", label: "New Task", icon: "tasks" }),
+          linkItem({ href: "/task-board", label: "Task Board", icon: "tasks" }),
+          linkItem({ href: "/projects", label: "Projects", icon: "reports" }),
+          linkItem({ href: "/company-calendar", label: "Company Calendar", icon: "insights" }),
+          linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
+          linkItem({ href: "/reports", label: "Reports", icon: "reports" })
+        ]
+      }),
+      groupItem({
+        label: "Operations",
         icon: "approvals",
         items: [
+          linkItem({ href: "/leave", label: "Leave", icon: "approvals" }),
+          linkItem({ href: "/assets", label: "Assets", icon: "building" }),
+          linkItem({ href: "/documents", label: "Documents", icon: "reports" }),
+          linkItem({ href: "/tickets", label: "Tickets", icon: "tasks" }),
+          linkItem({ href: "/announcements", label: "Announcements", icon: "bell" }),
           linkItem({ href: "/admin/approvals", label: "Approvals", icon: "team" }),
           linkItem({ href: "/admin/notifications", label: "Notifications", icon: "bell" }),
           linkItem({ href: "/admin/audit", label: "Audit Log", icon: "shield" })
@@ -241,19 +285,12 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
       }),
       linkItem({ href: "/features", label: "Tools", icon: "features" }),
       groupItem({
-        label: "Work",
-        icon: "reports",
-        items: [
-          linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
-          linkItem({ href: "/reports", label: "Reports", icon: "reports" })
-        ]
-      }),
-      groupItem({
         label: "Account",
         icon: "profile",
         items: [
           linkItem({ href: "/profile", label: "Profile", icon: "profile" }),
           linkItem({ href: "/expenses", label: "Expenses", icon: "expenses" }),
+          linkItem({ href: "/dashboard-settings", label: "Dashboard Widgets", icon: "settings" }),
           linkItem({ href: "/settings", label: "Settings", icon: "settings" })
         ]
       })
@@ -262,12 +299,26 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
 
   return [
     linkItem({ href: "/dashboard", label: "Dashboard", icon: "dashboard" }),
-    linkItem({ href: "/tasks", label: "Tasks", icon: "tasks" }),
+    linkItem({ href: "/search", label: "Search", icon: "search" }),
+    groupItem({
+      label: "Work",
+      icon: "tasks",
+      items: [
+        linkItem({ href: "/tasks", label: role === "coordinator" ? "New Task" : "Tasks", icon: "tasks" }),
+        linkItem({ href: "/task-board", label: "Task Board", icon: "tasks" }),
+        ...(role === "coordinator" ? [linkItem({ href: "/projects", label: "Projects", icon: "reports" })] : []),
+        linkItem({ href: "/company-calendar", label: "Calendar", icon: "insights" }),
+        linkItem({ href: "/leave", label: "Leave", icon: "approvals" })
+      ]
+    }),
+    linkItem({ href: "/directory", label: "People", icon: "users" }),
     linkItem({ href: "/features", label: "Tools", icon: "features" }),
     groupItem({
       label: "Updates",
       icon: "notifications",
       items: [
+        linkItem({ href: "/announcements", label: "Announcements", icon: "bell" }),
+        linkItem({ href: "/tickets", label: "Tickets", icon: "tasks" }),
         linkItem({ href: "/approvals", label: "Approvals", icon: "approvals" }),
         linkItem({ href: "/notifications", label: "Notifications", icon: "notifications" }),
         linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
@@ -280,6 +331,7 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
       items: [
         linkItem({ href: "/profile", label: "Profile", icon: "profile" }),
         linkItem({ href: "/expenses", label: "Expenses", icon: "expenses" }),
+        linkItem({ href: "/dashboard-settings", label: "Dashboard Widgets", icon: "settings" }),
         linkItem({ href: "/settings", label: "Settings", icon: "settings" })
       ]
     })
@@ -302,11 +354,76 @@ export function AppShell({
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const visibleNavItems = getNavItemsForRole(role);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [activeTaskTimer, setActiveTaskTimer] = useState<ActiveTaskTimer | null>(null);
+  const [timerNow, setTimerNow] = useState(Date.now());
 
   useEffect(() => {
     setPendingHref(null);
     setOpenGroup(null);
   }, [pathname, role]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUnreadNotifications() {
+      try {
+        const response = await fetch("/api/notifications", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as { notifications?: Array<{ readAt?: string | null }> };
+        const unread = (data.notifications ?? []).filter((notification) => !notification.readAt).length;
+
+        if (!cancelled) {
+          setUnreadNotifications(unread);
+        }
+      } catch {
+        if (!cancelled) {
+          setUnreadNotifications(0);
+        }
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void loadUnreadNotifications();
+      }
+    }
+
+    void loadUnreadNotifications();
+    const interval = window.setInterval(loadUnreadNotifications, 60000);
+    window.addEventListener("focus", loadUnreadNotifications);
+    window.addEventListener("office-tracker:notifications-updated", loadUnreadNotifications);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", loadUnreadNotifications);
+      window.removeEventListener("office-tracker:notifications-updated", loadUnreadNotifications);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    function syncTimer() {
+      const stored = window.localStorage.getItem(activeTaskTimerKey);
+      setActiveTaskTimer(stored ? (JSON.parse(stored) as ActiveTaskTimer) : null);
+    }
+
+    syncTimer();
+    window.addEventListener("storage", syncTimer);
+    window.addEventListener("office-tracker:task-timer-updated", syncTimer);
+    const interval = window.setInterval(() => setTimerNow(Date.now()), 1000);
+
+    return () => {
+      window.removeEventListener("storage", syncTimer);
+      window.removeEventListener("office-tracker:task-timer-updated", syncTimer);
+      window.clearInterval(interval);
+    };
+  }, []);
 
   function startNavigationFeedback(href: string) {
     if (href === pathname || pathname.startsWith(`${href}/`)) {
@@ -314,6 +431,65 @@ export function AppShell({
     }
 
     setPendingHref(href);
+  }
+
+  function getNotificationBadgeForItem(item: NavItem) {
+    if (unreadNotifications <= 0) {
+      return null;
+    }
+
+    if (item.kind === "link") {
+      return item.href.endsWith("/notifications") ? unreadNotifications : null;
+    }
+
+    return item.items.some((child) => child.href.endsWith("/notifications")) ? unreadNotifications : null;
+  }
+
+  function NotificationBadge({ count, compact = false }: { count: number; compact?: boolean }) {
+    if (count <= 0) {
+      return null;
+    }
+
+    const label = count > 99 ? "99+" : String(count);
+    return (
+      <span
+        className={`grid shrink-0 place-items-center rounded-full bg-rose-500 font-bold leading-none text-white shadow-sm shadow-rose-950/20 ${
+          compact ? "h-4 min-w-4 px-1 text-[10px]" : "h-5 min-w-5 px-1.5 text-[11px]"
+        }`}
+        aria-label={`${count} unread notifications`}
+      >
+        {label}
+      </span>
+    );
+  }
+
+  function getActiveTaskSeconds() {
+    if (!activeTaskTimer) {
+      return 0;
+    }
+
+    return activeTaskTimer.accumulatedSeconds + Math.floor((timerNow - activeTaskTimer.startedAt) / 1000);
+  }
+
+  async function stopFloatingTaskTimer() {
+    if (!activeTaskTimer) {
+      return;
+    }
+
+    const timeSpentSeconds = getActiveTaskSeconds();
+    const timer = activeTaskTimer;
+    window.localStorage.removeItem(activeTaskTimerKey);
+    setActiveTaskTimer(null);
+    window.dispatchEvent(new Event("office-tracker:task-timer-updated"));
+
+    await fetch(`/api/workspace-items/${timer.taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "in_progress",
+        metadata: { timeSpentSeconds }
+      })
+    }).catch(() => undefined);
   }
 
   return (
@@ -355,6 +531,7 @@ export function AppShell({
           <nav className="flex flex-1 items-center gap-2 overflow-x-auto lg:block lg:min-h-0 lg:space-y-2 lg:overflow-visible">
             {visibleNavItems.map((item) => {
               const active = isActiveNavItem(pathname, item);
+              const notificationBadge = getNotificationBadgeForItem(item);
 
               if (item.kind === "group") {
                 const expanded = openGroup === item.label && !collapsed;
@@ -364,17 +541,19 @@ export function AppShell({
                     <button
                       type="button"
                       onClick={() => setOpenGroup((value) => (value === item.label ? null : item.label))}
-                      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
+                      className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
                         active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"
-                      }`}
+                      } ${collapsed ? "lg:mx-auto lg:h-12 lg:w-12 lg:justify-center lg:p-0" : ""}`}
                       aria-expanded={expanded}
                     >
                       <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${active ? "bg-slate-100" : "bg-white/10"}`}>
                         <LineIcon name={item.icon} />
                       </span>
+                      {collapsed && notificationBadge ? <span className="absolute right-1.5 top-1.5"><NotificationBadge count={notificationBadge} compact /></span> : null}
                       {!collapsed ? (
                         <>
                           <span className="hidden flex-1 text-left lg:inline">{item.label}</span>
+                          {notificationBadge ? <span className="hidden lg:block"><NotificationBadge count={notificationBadge} /></span> : null}
                           <span className={`hidden text-slate-400 transition lg:block ${expanded ? "rotate-90" : ""}`}>
                             <LineIcon name="chevron" />
                           </span>
@@ -386,17 +565,19 @@ export function AppShell({
                       <div className="fixed left-4 right-4 top-[76px] z-50 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-2xl lg:static lg:mt-1 lg:block lg:space-y-1 lg:border-0 lg:bg-transparent lg:p-0 lg:pl-11 lg:shadow-none">
                         {item.items.map((child) => {
                           const childActive = isActivePath(pathname, child.href);
+                          const childBadge = child.href.endsWith("/notifications") ? unreadNotifications : 0;
 
                           return (
                             <Link
                               key={child.href}
                               href={child.href}
                               onClick={() => startNavigationFeedback(child.href)}
-                              className={`block rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                              className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                                 childActive ? "bg-white/90 text-slate-950" : "text-slate-400 hover:bg-white/10 hover:text-white"
                               }`}
                             >
-                              {child.label}
+                              <span>{child.label}</span>
+                              <NotificationBadge count={childBadge} compact />
                             </Link>
                           );
                         })}
@@ -411,14 +592,20 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   onClick={() => startNavigationFeedback(item.href)}
-                  className={`flex shrink-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition lg:w-full ${
+                  className={`relative flex shrink-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition lg:w-full ${
                     active ? "bg-white text-slate-950" : "text-slate-300 hover:bg-white/10 hover:text-white"
-                  }`}
+                  } ${collapsed ? "lg:mx-auto lg:h-12 lg:w-12 lg:justify-center lg:p-0" : ""}`}
                 >
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${active ? "bg-slate-100" : "bg-white/10"}`}>
                     <LineIcon name={item.icon} />
                   </span>
-                  {!collapsed ? <span className="hidden lg:inline">{item.label}</span> : null}
+                  {collapsed && notificationBadge ? <span className="absolute right-1.5 top-1.5"><NotificationBadge count={notificationBadge} compact /></span> : null}
+                  {!collapsed ? (
+                    <>
+                      <span className="hidden flex-1 lg:inline">{item.label}</span>
+                      {notificationBadge ? <span className="hidden lg:block"><NotificationBadge count={notificationBadge} /></span> : null}
+                    </>
+                  ) : null}
                 </Link>
               );
             })}
@@ -461,6 +648,24 @@ export function AppShell({
           </div>
         </div>
         {children}
+        {activeTaskTimer ? (
+          <div className="fixed bottom-4 right-4 z-[80] w-[min(360px,calc(100vw-2rem))] rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-950/15">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">Task timer</p>
+                <p className="mt-1 truncate text-sm font-semibold text-slate-950">{activeTaskTimer.title}</p>
+                <p className="mt-2 font-mono text-2xl font-semibold tabular-nums text-slate-950">{formatDuration(getActiveTaskSeconds())}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void stopFloatingTaskTimer()}
+                className="rounded-full border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+              >
+                Stop
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </main>
   );

@@ -2,19 +2,17 @@ import { WorkspaceItemsPageClient } from "@/components/pages/WorkspaceItemsPageC
 import { requireUser } from "@/lib/require-auth";
 import { canManageTeam } from "@/lib/roles";
 
-export default async function TasksPage() {
+export default async function TaskBoardPage() {
   const user = await requireUser();
   const taskAssignmentMode = user.role === "coordinator" ? "members" : canManageTeam(user.role) ? "all" : "none";
-  const canCreateTasks = user.role === "coordinator" || canManageTeam(user.role);
-  const displayMode = user.role === "member" ? "list" : "create";
 
   return (
     <WorkspaceItemsPageClient
       type="task"
       taskAssignmentMode={taskAssignmentMode}
       currentUserName={user.name}
-      canCreate={canCreateTasks}
-      displayMode={displayMode}
+      canCreate={false}
+      displayMode="list"
       canEditTasks={user.role !== "member"}
     />
   );

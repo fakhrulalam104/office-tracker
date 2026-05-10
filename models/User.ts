@@ -20,7 +20,7 @@ const UserSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["super_admin", "owner", "admin", "manager", "hr", "member"],
+      enum: ["super_admin", "owner", "admin", "manager", "hr", "coordinator", "member"],
       default: "member"
     },
     designation: {
@@ -76,6 +76,10 @@ const UserSchema = new Schema(
       type: String,
       default: "",
       trim: true
+    },
+    socialLinks: {
+      type: Schema.Types.Mixed,
+      default: {}
     }
   },
   {

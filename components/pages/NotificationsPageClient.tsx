@@ -39,6 +39,7 @@ export function NotificationsPageClient() {
 
     if (response.ok) {
       await loadNotifications();
+      window.dispatchEvent(new Event("office-tracker:notifications-updated"));
     }
   }
 

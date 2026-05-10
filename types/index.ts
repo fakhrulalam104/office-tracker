@@ -1,5 +1,5 @@
 export type DayStatus = "work" | "holiday" | "sick" | "leave";
-export type UserRole = "super_admin" | "owner" | "admin" | "manager" | "hr" | "member";
+export type UserRole = "super_admin" | "owner" | "admin" | "manager" | "hr" | "coordinator" | "member";
 
 export type ExpenseCategory = string;
 
@@ -86,6 +86,7 @@ export type UserProfile = {
   bio: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
+  socialLinks: Record<string, string>;
   createdAt?: string | null;
 };
 

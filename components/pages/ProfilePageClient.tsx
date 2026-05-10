@@ -18,8 +18,47 @@ const emptyProfile: UserProfile = {
   bio: "",
   emergencyContactName: "",
   emergencyContactPhone: "",
+  socialLinks: {},
   createdAt: null
 };
+
+const socialFields = [
+  { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/username" },
+  { key: "teams", label: "Microsoft Teams", placeholder: "Teams chat/profile link" },
+  { key: "whatsapp", label: "WhatsApp", placeholder: "https://wa.me/8801..." },
+  { key: "email", label: "Email", placeholder: "mailto:name@company.com" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/username" },
+  { key: "github", label: "GitHub", placeholder: "https://github.com/username" },
+  { key: "website", label: "Website", placeholder: "https://your-site.com" },
+  { key: "skype", label: "Skype", placeholder: "Skype profile/contact link" },
+  { key: "telegram", label: "Telegram", placeholder: "https://t.me/username" },
+  { key: "discord", label: "Discord", placeholder: "Discord username or invite" }
+];
+
+function SocialIcon({ name }: { name: string }) {
+  const label = name.slice(0, 2).toUpperCase();
+  return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-950 text-xs font-black text-white">{label}</span>;
+}
+
+function getSocialHref(key: string, value: string) {
+  if (!value.trim()) {
+    return "";
+  }
+
+  if (key === "email") {
+    return value.startsWith("mailto:") ? value : `mailto:${value}`;
+  }
+
+  if (key === "whatsapp" && /^\+?\d[\d\s-]+$/.test(value)) {
+    return `https://wa.me/${value.replace(/\D/g, "")}`;
+  }
+
+  if (/^(mailto:|tel:|skype:|tg:|https?:\/\/)/i.test(value)) {
+    return value;
+  }
+
+  return `https://${value}`;
+}
 
 export function ProfilePageClient() {
   const [profile, setProfile] = useState<UserProfile>(emptyProfile);
@@ -55,6 +94,17 @@ export function ProfilePageClient() {
     setProfile((current) => ({
       ...current,
       [key]: value
+    }));
+    setSaved(false);
+  }
+
+  function updateSocialLink(key: string, value: string) {
+    setProfile((current) => ({
+      ...current,
+      socialLinks: {
+        ...(current.socialLinks ?? {}),
+        [key]: value
+      }
     }));
     setSaved(false);
   }
@@ -235,6 +285,41 @@ export function ProfilePageClient() {
                   />
                 </label>
               </div>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div>
+              <p className="text-base font-semibold text-slate-950">Social & Contact Links</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Add any links you want teammates to see from the People page.</p>
+            </div>
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {socialFields.map((field) => (
+                <label key={field.key} className="flex items-center gap-3">
+                  {profile.socialLinks?.[field.key]?.trim() ? (
+                    <a
+                      href={getSocialHref(field.key, profile.socialLinks[field.key])}
+                      target={field.key === "email" ? undefined : "_blank"}
+                      rel={field.key === "email" ? undefined : "noreferrer"}
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label={`Open ${field.label}`}
+                    >
+                      <SocialIcon name={field.label} />
+                    </a>
+                  ) : (
+                    <SocialIcon name={field.label} />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-semibold text-slate-700">{field.label}</span>
+                    <input
+                      value={profile.socialLinks?.[field.key] ?? ""}
+                      onChange={(event) => updateSocialLink(field.key, event.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                      placeholder={field.placeholder}
+                    />
+                  </div>
+                </label>
+              ))}
             </div>
           </section>
 
