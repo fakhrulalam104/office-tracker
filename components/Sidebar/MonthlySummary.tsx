@@ -5,10 +5,12 @@ import { getFineStateForLimit } from "@/lib/utils";
 
 function StatPill({
   label,
+  shortLabel,
   value,
   tone
 }: {
   label: string;
+  shortLabel?: string;
   value: number;
   tone: "emerald" | "violet" | "slate";
 }) {
@@ -20,9 +22,11 @@ function StatPill({
         : "border-slate-200 bg-slate-100 text-slate-700";
 
   return (
-    <div className={`rounded-2xl border px-3 py-3 text-center ${toneClasses}`}>
+    <div className={`min-w-0 rounded-2xl border px-2 py-3 text-center ${toneClasses}`}>
       <div className="text-lg font-semibold">{value}</div>
-      <div className="text-[11px] font-medium uppercase tracking-[0.18em]">{label}</div>
+      <div className="mt-1 break-words text-[10px] font-medium uppercase leading-3 tracking-[0.08em]" title={label}>
+        {shortLabel ?? label}
+      </div>
     </div>
   );
 }
@@ -141,8 +145,8 @@ export function MonthlySummary({
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <StatPill label="Holiday" value={holidayDays} tone="emerald" />
               <StatPill label="Sick" value={sickDays} tone="violet" />
-              <StatPill label="Other leave" value={leaveDays} tone="slate" />
-              <StatPill label="Adjustment" value={adjustmentLeaveDays} tone="slate" />
+              <StatPill label="Other leave" shortLabel="Other" value={leaveDays} tone="slate" />
+              <StatPill label="Adjustment leave" shortLabel="Adjust" value={adjustmentLeaveDays} tone="slate" />
             </div>
             <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
               <div className="flex items-end justify-between gap-3">

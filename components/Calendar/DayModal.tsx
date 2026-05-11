@@ -174,11 +174,14 @@ export function DayModal({
           <div>
             <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-900">Day type</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {detectedHoliday
-                  ? `${detectedHoliday.name} is marked as a holiday by default. Choose Work and save if you have to work that day.`
-                  : "Pick the status that best matches this day."}
-              </p>
+              <p className="mt-1 text-sm text-slate-500">Pick the status that best matches this day.</p>
+              {detectedHoliday ? (
+                <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                  <p className="font-semibold">Holiday details</p>
+                  <p className="mt-1">{detectedHoliday.name}</p>
+                  <p className="mt-1 text-xs text-emerald-700">Choose Work and save if you have to work that day.</p>
+                </div>
+              ) : null}
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {statusOrder.map((value) => {

@@ -19,6 +19,13 @@ const features = [
     icon: "image"
   },
   {
+    href: "/features/image-background-remover",
+    label: "Image Background Remover",
+    description: "Remove image backgrounds locally and export clean transparent PNG files.",
+    status: "Available",
+    icon: "cutout"
+  },
+  {
     href: "/features/image-vectorizer",
     label: "Image Vectorizer",
     description: "Turn raster images into downloadable SVG files while preserving the original colors.",
@@ -80,6 +87,15 @@ function FeatureIcon({ name }: { name: string }) {
         <circle cx="13" cy="17" r="1.6" fill="currentColor" />
         <circle cx="15" cy="12" r="1.6" fill="currentColor" />
         <circle cx="19" cy="17" r="1.6" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (name === "cutout") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+        <path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5v-9Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 16.5 16.5 8M9 8h3M8 9v3M12 17h3M17 12v3" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       </svg>
     );
   }

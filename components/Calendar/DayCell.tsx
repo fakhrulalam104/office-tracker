@@ -1,6 +1,6 @@
 "use client";
 
-import { dayStatusLabel, defaultDayStatusForDate, getHolidayForDate, normalizeDayStatus, normalizeLeaveType } from "@/lib/utils";
+import { dayStatusLabel, defaultDayStatusForDate, normalizeDayStatus, normalizeLeaveType } from "@/lib/utils";
 import type { EntryItem } from "@/types";
 
 function CateringIcon() {
@@ -39,7 +39,6 @@ export function DayCell({
 }) {
   const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey, { weeklyHolidays });
   const leaveType = dayStatus === "leave" ? normalizeLeaveType(entry?.leaveType) : "regular";
-  const holiday = getHolidayForDate(dateKey);
   const delayMinutes = dayStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
   const hadLunch = dayStatus === "work" ? entry?.hadLunch ?? false : false;
   const hasDelay = delayMinutes > 0;
@@ -119,18 +118,14 @@ export function DayCell({
 
       <div className="mt-4 space-y-1">
         {isToday ? <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${todayLabelClass}`}>Today</p> : null}
-        {holiday && dayStatus === "holiday" ? (
-          <p className="line-clamp-2 text-xs font-medium leading-4 text-emerald-700">{holiday.name}</p>
-        ) : dayStatus === "leave" && leaveType === "adjustment" ? (
+        {dayStatus === "holiday" ? null : dayStatus === "leave" && leaveType === "adjustment" ? (
           <p className="text-xs font-medium text-slate-700">Adjustment leave</p>
         ) : dayStatus !== "work" ? (
           <p className="text-xs font-medium text-slate-700">{dayStatusLabel(dayStatus)}</p>
-        ) : holiday ? (
-          <p className="line-clamp-2 text-xs font-medium leading-4 text-indigo-700">Working: {holiday.name}</p>
         ) : null}
       </div>
 
-      {entry ? (
+      {entry || dayStatus === "holiday" ? (
         <div className="absolute bottom-3 right-3 flex gap-1">
           {dayStatus !== "work" ? (
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>

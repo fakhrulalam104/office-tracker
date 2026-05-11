@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { EntryItem } from "@/types";
-import { buildMonthGrid, defaultDayStatusForDate, getHolidayForDate, monthLabel, normalizeLeaveType, toDateKey } from "@/lib/utils";
+import { buildMonthGrid, defaultDayStatusForDate, monthLabel, normalizeLeaveType, toDateKey } from "@/lib/utils";
 import { DayCell } from "@/components/Calendar/DayCell";
 
 export function MonthCalendar({
@@ -97,7 +97,6 @@ export function MonthCalendar({
             const entry = entryMap.get(cell.dateKey);
             const status = entry?.dayStatus ?? defaultDayStatusForDate(cell.dateKey, { weeklyHolidays });
             const leaveType = status === "leave" ? normalizeLeaveType(entry?.leaveType) : "regular";
-            const holiday = getHolidayForDate(cell.dateKey);
 
             return (
               <button
@@ -111,13 +110,7 @@ export function MonthCalendar({
                     {cell.day} {todayKey === cell.dateKey ? "Today" : ""}
                   </span>
                   <span className="text-xs text-slate-500">
-                    {holiday && status === "holiday"
-                      ? holiday.name
-                      : holiday && status === "work"
-                        ? `Working: ${holiday.name}`
-                        : status === "leave" && leaveType === "adjustment"
-                          ? "Adjustment leave"
-                          : status}
+                    {status === "leave" && leaveType === "adjustment" ? "Adjustment" : status}
                   </span>
                 </span>
                 <span className="text-sm font-semibold text-slate-500">{entry ? "Saved" : "Open"}</span>
