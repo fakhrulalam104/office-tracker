@@ -19,6 +19,13 @@ const features = [
     icon: "image"
   },
   {
+    href: "/features/image-vectorizer",
+    label: "Image Vectorizer",
+    description: "Turn raster images into downloadable SVG files while preserving the original colors.",
+    status: "Available",
+    icon: "vector"
+  },
+  {
     href: "/features/notes",
     label: "Notes",
     description: "Keep text notes, links, tags, pinned items, and archived references in one focused workspace.",
@@ -60,6 +67,19 @@ function FeatureIcon({ name }: { name: string }) {
         <rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
         <path d="m7 16 3.2-3.2 2.4 2.4 2.1-2.1L18 16" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
         <circle cx="9" cy="9" r="1.2" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (name === "vector") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+        <path d="M5 17 9 7l4 10 2-5 4 5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <circle cx="5" cy="17" r="1.6" fill="currentColor" />
+        <circle cx="9" cy="7" r="1.6" fill="currentColor" />
+        <circle cx="13" cy="17" r="1.6" fill="currentColor" />
+        <circle cx="15" cy="12" r="1.6" fill="currentColor" />
+        <circle cx="19" cy="17" r="1.6" fill="currentColor" />
       </svg>
     );
   }
