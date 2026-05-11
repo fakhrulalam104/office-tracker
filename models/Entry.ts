@@ -1,6 +1,12 @@
 import { Schema, models, model, type Types } from "mongoose";
 import { DAY_STATUSES } from "@/lib/utils";
-import type { DailyExpenseItem, DayStatus } from "@/types";
+import type { DailyExpenseItem, DayStatus, LeaveType } from "@/types";
+
+const leaveTypeSchema = {
+  type: String,
+  enum: ["regular", "adjustment"],
+  default: "regular"
+};
 
 const EntrySchema = new Schema(
   {
@@ -33,6 +39,7 @@ const EntrySchema = new Schema(
       type: String,
       default: ""
     },
+    leaveType: leaveTypeSchema,
     dailyExpenseAmount: {
       type: Number,
       default: 0,
@@ -81,6 +88,7 @@ export type EntryDocument = {
   delayMinutes: number;
   hadLunch: boolean;
   dayStatus: DayStatus;
+  leaveType: LeaveType;
   comment: string;
   dailyExpenseAmount: number;
   dailyExpenseNote: string;
@@ -89,4 +97,10 @@ export type EntryDocument = {
   updatedAt: Date;
 };
 
-export const Entry = models.Entry || model("Entry", EntrySchema);
+const existingEntryModel = models.Entry;
+
+if (existingEntryModel && !existingEntryModel.schema.path("leaveType")) {
+  existingEntryModel.schema.add({ leaveType: leaveTypeSchema });
+}
+
+export const Entry = existingEntryModel || model("Entry", EntrySchema);

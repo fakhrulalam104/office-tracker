@@ -3,7 +3,16 @@ import { auth } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getUserSettings } from "@/lib/settings";
 import { Entry } from "@/models/Entry";
-import { expenseCategoryLabel, formatDateLabel, monthBounds, normalizeDailyExpenses, normalizeDayStatus, parseMonthKey, totalDailyExpenses } from "@/lib/utils";
+import {
+  expenseCategoryLabel,
+  formatDateLabel,
+  monthBounds,
+  normalizeDailyExpenses,
+  normalizeDayStatus,
+  normalizeLeaveType,
+  parseMonthKey,
+  totalDailyExpenses
+} from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -32,7 +41,7 @@ export async function GET(request: NextRequest) {
       .lean();
 
     const rows = [
-      ["Date", "Status", "Delay Minutes", "Office Lunch", "Lunch Spend", "Expense Total", "Expense Items", "Comment"],
+      ["Date", "Status", "Leave Type", "Delay Minutes", "Office Lunch", "Lunch Spend", "Expense Total", "Expense Items", "Comment"],
       ...entries.map((entry) => {
         const expenses = normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote);
         const expenseItems = expenses
@@ -42,6 +51,7 @@ export async function GET(request: NextRequest) {
         return [
           formatDateLabel(entry.date),
           normalizeDayStatus(entry.dayStatus),
+          normalizeDayStatus(entry.dayStatus) === "leave" ? normalizeLeaveType(entry.leaveType) : "",
           normalizeDayStatus(entry.dayStatus) === "work" ? entry.delayMinutes ?? 0 : 0,
           entry.hadLunch ? "Yes" : "No",
           entry.hadLunch ? settings.lunchPrice : 0,

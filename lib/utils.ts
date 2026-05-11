@@ -1,4 +1,4 @@
-import type { DailyExpenseItem, DayStatus, ExpenseCategory, ExpenseCategoryOption, UserSettings } from "@/types";
+import type { DailyExpenseItem, DayStatus, ExpenseCategory, ExpenseCategoryOption, LeaveType, UserSettings } from "@/types";
 
 export const LUNCH_PRICE = 90;
 export const MONTH_DELAY_LIMIT = 150;
@@ -7,6 +7,45 @@ export const DAILY_EXPENSE_NOTE_MAX_LENGTH = 300;
 export const EXPENSE_CATEGORY_LABEL_MAX_LENGTH = 40;
 export const EXPENSE_CATEGORY_LIMIT = 20;
 export const DAY_STATUSES: DayStatus[] = ["work", "holiday", "sick", "leave"];
+export const ANNUAL_LEAVE_ALLOWANCE_DAYS = 18;
+export type HolidayDefinition = {
+  name: string;
+  scope: "national" | "international";
+  note?: string;
+};
+
+const FIXED_HOLIDAYS: Record<string, HolidayDefinition> = {
+  "01-01": { name: "New Year's Day", scope: "international" },
+  "02-21": { name: "Shaheed Dibosh and International Mother Language Day", scope: "national" },
+  "03-26": { name: "Independence and National Day", scope: "national" },
+  "04-14": { name: "Bangla New Year", scope: "national" },
+  "05-01": { name: "May Day", scope: "international" },
+  "08-05": { name: "July Revolution Day", scope: "national" },
+  "12-16": { name: "Victory Day", scope: "national" },
+  "12-25": { name: "Christmas Day", scope: "international" }
+};
+
+const OBSERVED_HOLIDAYS_BY_DATE: Record<string, HolidayDefinition> = {
+  "2026-02-04": { name: "Shab-e-Barat", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-17": { name: "Shab-e-Qadar", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-19": { name: "Eid-ul-Fitr Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-20": { name: "Eid-ul-Fitr and Jumatul Bidah", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-21": { name: "Eid-ul-Fitr Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-22": { name: "Eid-ul-Fitr Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-03-23": { name: "Eid-ul-Fitr Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-01": { name: "May Day and Buddha Purnima", scope: "national", note: "Buddha Purnima is lunar-calendar dependent" },
+  "2026-05-26": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-27": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-28": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-29": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-30": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-05-31": { name: "Eid-ul-Azha Holiday", scope: "national", note: "Moon sighting dependent" },
+  "2026-06-26": { name: "Ashura", scope: "national", note: "Moon sighting dependent" },
+  "2026-08-26": { name: "Eid-e-Miladunnabi", scope: "national", note: "Moon sighting dependent" },
+  "2026-09-04": { name: "Janmashtami", scope: "national" },
+  "2026-10-20": { name: "Durga Puja Holiday", scope: "national" },
+  "2026-10-21": { name: "Durga Puja Holiday", scope: "national" }
+};
 export const EXPENSE_CATEGORIES: ExpenseCategoryOption[] = [
   { value: "transport", label: "Transport" },
   { value: "food", label: "Food" },
@@ -126,7 +165,21 @@ export function isSundayDateKey(dateKey: string) {
   return dayOfWeekForDateKey(dateKey) === 0;
 }
 
+export function getHolidayForDate(dateKey: string): HolidayDefinition | null {
+  const observedHoliday = OBSERVED_HOLIDAYS_BY_DATE[dateKey];
+  if (observedHoliday) {
+    return observedHoliday;
+  }
+
+  const fixedHoliday = FIXED_HOLIDAYS[dateKey.slice(5)];
+  return fixedHoliday ?? null;
+}
+
 export function defaultDayStatusForDate(dateKey: string, settings: Pick<UserSettings, "weeklyHolidays"> = DEFAULT_USER_SETTINGS): DayStatus {
+  if (getHolidayForDate(dateKey)) {
+    return "holiday";
+  }
+
   const dayOfWeek = dayOfWeekForDateKey(dateKey);
   return dayOfWeek !== null && settings.weeklyHolidays.includes(dayOfWeek) ? "holiday" : "work";
 }
@@ -242,6 +295,18 @@ export function normalizeDayStatus(value: unknown): DayStatus {
     default:
       return "work";
   }
+}
+
+export function normalizeLeaveType(value: unknown): LeaveType {
+  return value === "adjustment" ? "adjustment" : "regular";
+}
+
+export function isAdjustmentLeaveEntry(entry: unknown) {
+  if (!entry || typeof entry !== "object") {
+    return false;
+  }
+
+  return normalizeDayStatus(readObjectValue(entry, "dayStatus")) === "leave" && normalizeLeaveType(readObjectValue(entry, "leaveType")) === "adjustment";
 }
 
 export function isTimeOffStatus(value: unknown) {

@@ -10,12 +10,13 @@ import {
   defaultDayStatusForDate,
   expenseCategoryLabel,
   formatDateLabel,
+  getHolidayForDate,
   normalizeDailyExpenseNote,
   normalizeDailyExpenses,
   normalizeDayStatus,
   totalDailyExpenses
 } from "@/lib/utils";
-import type { DailyExpenseItem, DayStatus, EntryItem, ExpenseCategory } from "@/types";
+import type { DailyExpenseItem, DayStatus, EntryItem, ExpenseCategory, LeaveType } from "@/types";
 import type { ExpenseCategoryOption } from "@/types";
 
 const presets = [0, 10, 20, 30, 45, 60, 90];
@@ -55,6 +56,7 @@ export function DayModal({
     delayMinutes: number;
     hadLunch: boolean;
     dayStatus: DayStatus;
+    leaveType: LeaveType;
     comment: string;
     dailyExpenses: DailyExpenseItem[];
   }) => Promise<void> | void;
@@ -65,6 +67,7 @@ export function DayModal({
   const [customMinutes, setCustomMinutes] = useState("");
   const [hadLunch, setHadLunch] = useState(false);
   const [dayStatus, setDayStatus] = useState<DayStatus>("work");
+  const [leaveType, setLeaveType] = useState<LeaveType>("regular");
   const [comment, setComment] = useState("");
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpenseItem[]>([]);
   const [expenseDraftAmount, setExpenseDraftAmount] = useState("");
@@ -85,6 +88,7 @@ export function DayModal({
     const matchedPreset = presets.includes(currentMinutes) ? currentMinutes : null;
 
     setDayStatus(currentStatus);
+    setLeaveType(currentStatus === "leave" ? entry?.leaveType ?? "regular" : "regular");
     setSelectedPreset(matchedPreset);
     setCustomMinutes(matchedPreset === null && currentMinutes > 0 ? String(currentMinutes) : "");
     setHadLunch(currentStatus === "work" ? Boolean(entry?.hadLunch) : false);
@@ -111,6 +115,7 @@ export function DayModal({
   }, [onClose, open]);
 
   const dateTitle = useMemo(() => (dateKey ? formatDateLabel(dateKey) : "Select a day"), [dateKey]);
+  const detectedHoliday = useMemo(() => (dateKey ? getHolidayForDate(dateKey) : null), [dateKey]);
   const isWorkDay = dayStatus === "work";
   const activeMinutes = customMinutes !== "" ? clamp(Number(customMinutes || 0), 0, 480) : selectedPreset ?? 0;
   const draftExpenseAmount = clamp(Number(expenseDraftAmount || 0), 0, 1_000_000);
@@ -169,7 +174,11 @@ export function DayModal({
           <div>
             <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-900">Day type</p>
-              <p className="mt-1 text-sm text-slate-500">Pick the status that best matches this day.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {detectedHoliday
+                  ? `${detectedHoliday.name} is marked as a holiday by default. Choose Work and save if you have to work that day.`
+                  : "Pick the status that best matches this day."}
+              </p>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {statusOrder.map((value) => {
@@ -282,6 +291,32 @@ export function DayModal({
               <div className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
                 <p className="font-semibold">{dayStatusLabel(dayStatus)} selected</p>
                 <p>Delay and lunch are disabled for time off days and will be cleared when you save.</p>
+                {dayStatus === "leave" ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-white/80 p-4 text-slate-700">
+                    <p className="text-sm font-medium text-slate-800">Leave type</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {[
+                        { value: "regular" as const, label: "Regular leave", helper: "Counts against the 18-day yearly leave balance." },
+                        { value: "adjustment" as const, label: "Adjustment leave", helper: "Does not count against yearly leave balance." }
+                      ].map((option) => {
+                        const active = leaveType === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setLeaveType(option.value)}
+                            className={`rounded-2xl border px-4 py-3 text-left transition ${
+                              active ? "border-indigo-500 bg-indigo-500 text-white shadow-sm" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <span className="block text-sm font-semibold">{option.label}</span>
+                            <span className={`mt-1 block text-xs ${active ? "text-white/80" : "text-slate-500"}`}>{option.helper}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
                 <label className="block rounded-2xl border border-emerald-200 bg-white/80 p-4 text-slate-700">
                   <span className="block text-sm font-medium text-slate-800">Comment for time off</span>
                   <textarea
@@ -426,6 +461,7 @@ export function DayModal({
                   delayMinutes: isWorkDay ? activeMinutes : 0,
                   hadLunch: isWorkDay ? hadLunch : false,
                   dayStatus,
+                  leaveType: dayStatus === "leave" ? leaveType : "regular",
                   comment: dayStatus !== "work" ? comment.trim() : "",
                   dailyExpenses: hasDraftExpense
                     ? [...dailyExpenses, { id: createExpenseId(), amount: draftExpenseAmount, category: expenseDraftCategory, note: draftExpenseNote }]

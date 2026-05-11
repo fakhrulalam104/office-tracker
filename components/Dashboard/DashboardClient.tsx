@@ -20,7 +20,11 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
     holidayDays: 0,
     sickDays: 0,
     leaveDays: 0,
+    adjustmentLeaveDays: 0,
     workDays: 0,
+    annualLeaveAllowanceDays: 18,
+    annualLeaveUsedDays: 0,
+    annualLeaveRemainingDays: 18,
     dailyExpenseTotal: 0,
     dailyExpenseCount: 0,
     expenseCategories: [],
@@ -82,7 +86,11 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
           holidayDays: summaryData.holidayDays ?? 0,
           sickDays: summaryData.sickDays ?? 0,
           leaveDays: summaryData.leaveDays ?? 0,
+          adjustmentLeaveDays: summaryData.adjustmentLeaveDays ?? 0,
           workDays: summaryData.workDays ?? 0,
+          annualLeaveAllowanceDays: summaryData.annualLeaveAllowanceDays ?? 18,
+          annualLeaveUsedDays: summaryData.annualLeaveUsedDays ?? 0,
+          annualLeaveRemainingDays: summaryData.annualLeaveRemainingDays ?? 18,
           dailyExpenseTotal: summaryData.dailyExpenseTotal ?? 0,
           dailyExpenseCount: summaryData.dailyExpenseCount ?? 0,
           expenseCategories: summaryData.expenseCategories ?? [],
@@ -137,7 +145,11 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
       holidayDays: summaryData.holidayDays ?? 0,
       sickDays: summaryData.sickDays ?? 0,
       leaveDays: summaryData.leaveDays ?? 0,
+      adjustmentLeaveDays: summaryData.adjustmentLeaveDays ?? 0,
       workDays: summaryData.workDays ?? 0,
+      annualLeaveAllowanceDays: summaryData.annualLeaveAllowanceDays ?? 18,
+      annualLeaveUsedDays: summaryData.annualLeaveUsedDays ?? 0,
+      annualLeaveRemainingDays: summaryData.annualLeaveRemainingDays ?? 18,
       dailyExpenseTotal: summaryData.dailyExpenseTotal ?? 0,
       dailyExpenseCount: summaryData.dailyExpenseCount ?? 0,
       expenseCategories: summaryData.expenseCategories ?? [],
@@ -153,6 +165,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
     delayMinutes: number;
     hadLunch: boolean;
     dayStatus: EntryItem["dayStatus"];
+    leaveType: EntryItem["leaveType"];
     comment: string;
     dailyExpenses: DailyExpenseItem[];
   }) {
@@ -274,6 +287,10 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
             holidayDays={summary.holidayDays}
             sickDays={summary.sickDays}
             leaveDays={summary.leaveDays}
+            adjustmentLeaveDays={summary.adjustmentLeaveDays}
+            annualLeaveAllowanceDays={summary.annualLeaveAllowanceDays}
+            annualLeaveUsedDays={summary.annualLeaveUsedDays}
+            annualLeaveRemainingDays={summary.annualLeaveRemainingDays}
             delayLimit={summary.delayLimit}
             lunchPrice={summary.lunchPrice}
             currency={summary.currency}

@@ -1,4 +1,5 @@
 export type DayStatus = "work" | "holiday" | "sick" | "leave";
+export type LeaveType = "regular" | "adjustment";
 export type UserRole = "super_admin" | "owner" | "admin" | "manager" | "hr" | "coordinator" | "member";
 
 export type ExpenseCategory = string;
@@ -21,6 +22,7 @@ export type EntryItem = {
   delayMinutes: number;
   hadLunch: boolean;
   dayStatus: DayStatus;
+  leaveType: LeaveType;
   comment?: string;
   dailyExpenses: DailyExpenseItem[];
   createdAt?: string;
@@ -34,7 +36,11 @@ export type MonthlySummary = {
   holidayDays: number;
   sickDays: number;
   leaveDays: number;
+  adjustmentLeaveDays: number;
   workDays: number;
+  annualLeaveAllowanceDays: number;
+  annualLeaveUsedDays: number;
+  annualLeaveRemainingDays: number;
   dailyExpenseTotal: number;
   dailyExpenseCount: number;
   expenseCategories: Array<{

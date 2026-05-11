@@ -10,6 +10,7 @@ import {
   normalizeComment,
   normalizeDailyExpenses,
   normalizeDayStatus,
+  normalizeLeaveType,
   parseDateKey,
   parseMonthKey,
   totalDailyExpenses
@@ -25,6 +26,7 @@ function toEntryResponse(entry: any) {
     delayMinutes: entry.delayMinutes,
     hadLunch: entry.hadLunch,
     dayStatus,
+    leaveType: dayStatus === "leave" ? normalizeLeaveType(entry.leaveType) : "regular",
     comment: normalizeComment(entry.comment),
     dailyExpenses: normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote),
     createdAt: entry.createdAt?.toISOString(),
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const date = parseDateKey(body?.date);
     const dayStatus = normalizeDayStatus(body?.dayStatus);
+    const leaveType = dayStatus === "leave" ? normalizeLeaveType(body?.leaveType) : "regular";
     const delayMinutes = isTimeOffStatus(dayStatus) ? 0 : clamp(Number(body?.delayMinutes ?? 0), 0, 480);
     const hadLunch = isTimeOffStatus(dayStatus) ? false : Boolean(body?.hadLunch);
     const comment = isTimeOffStatus(dayStatus) ? normalizeComment(body?.comment) : "";
@@ -104,6 +107,7 @@ export async function POST(request: Request) {
       existingEntry.delayMinutes = delayMinutes;
       existingEntry.hadLunch = hadLunch;
       existingEntry.dayStatus = dayStatus;
+      existingEntry.set("leaveType", leaveType, { strict: false });
       existingEntry.comment = comment;
       existingEntry.dailyExpenseAmount = dailyExpenseAmount;
       existingEntry.dailyExpenseNote = dailyExpenseNote;
@@ -115,7 +119,7 @@ export async function POST(request: Request) {
         action: "entry.updated",
         entityType: "entry",
         entityId: existingEntry._id.toString(),
-        details: { date, dayStatus, delayMinutes, hadLunch, dailyExpenseAmount }
+        details: { date, dayStatus, leaveType, delayMinutes, hadLunch, dailyExpenseAmount }
       });
 
       return NextResponse.json({ entry: toEntryResponse(existingEntry), created: false });
@@ -127,6 +131,7 @@ export async function POST(request: Request) {
       delayMinutes,
       hadLunch,
       dayStatus,
+      leaveType,
       comment,
       dailyExpenseAmount,
       dailyExpenseNote,
@@ -138,7 +143,7 @@ export async function POST(request: Request) {
       action: "entry.created",
       entityType: "entry",
       entityId: entry._id.toString(),
-      details: { date, dayStatus, delayMinutes, hadLunch, dailyExpenseAmount }
+      details: { date, dayStatus, leaveType, delayMinutes, hadLunch, dailyExpenseAmount }
     });
 
     return NextResponse.json({ entry: toEntryResponse(entry), created: true }, { status: 201 });

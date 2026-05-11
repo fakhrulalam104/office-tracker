@@ -8,6 +8,7 @@ import {
   normalizeComment,
   normalizeDailyExpenses,
   normalizeDayStatus,
+  normalizeLeaveType,
   parseDateKey,
   totalDailyExpenses
 } from "@/lib/utils";
@@ -23,6 +24,7 @@ function toEntryResponse(entry: any) {
     delayMinutes: entry.delayMinutes,
     hadLunch: entry.hadLunch,
     dayStatus,
+    leaveType: dayStatus === "leave" ? normalizeLeaveType(entry.leaveType) : "regular",
     comment: normalizeComment(entry.comment),
     dailyExpenses: normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote),
     createdAt: entry.createdAt?.toISOString(),
@@ -56,6 +58,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     const nextDayStatus = body?.dayStatus === undefined ? normalizeDayStatus(entry.dayStatus) : normalizeDayStatus(body?.dayStatus);
+    const leaveType = nextDayStatus === "leave" ? normalizeLeaveType(body?.leaveType ?? entry.leaveType) : "regular";
     const delayMinutes = isTimeOffStatus(nextDayStatus) ? 0 : clamp(Number(body?.delayMinutes ?? 0), 0, 480);
     const hadLunch = isTimeOffStatus(nextDayStatus) ? false : Boolean(body?.hadLunch);
     const comment = isTimeOffStatus(nextDayStatus) ? normalizeComment(body?.comment) : "";
@@ -78,6 +81,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     entry.delayMinutes = delayMinutes;
     entry.hadLunch = hadLunch;
     entry.dayStatus = nextDayStatus;
+    entry.set("leaveType", leaveType, { strict: false });
     entry.comment = comment;
     entry.dailyExpenseAmount = dailyExpenseAmount;
     entry.dailyExpenseNote = dailyExpenseNote;

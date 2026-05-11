@@ -4,10 +4,12 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
 import { getUserSettings } from "@/lib/settings";
 import {
+  ANNUAL_LEAVE_ALLOWANCE_DAYS,
   EXPENSE_CATEGORIES,
   countHolidayDaysForMonth,
   expenseCategoryLabel,
   getFineStateForLimit,
+  isAdjustmentLeaveEntry,
   isTimeOffStatus,
   monthBounds,
   normalizeDailyExpenses,
@@ -28,20 +30,34 @@ export async function GET(request: NextRequest) {
 
     const month = parseMonthKey(request.nextUrl.searchParams.get("month"));
     const { start, end } = monthBounds(month);
+    const year = month.slice(0, 4);
     const settings = await getUserSettings(userId);
 
     await connectToDatabase();
-    const entries = await Entry.find({
-      userId,
-      date: { $gte: start, $lte: end }
-    }).lean();
+    const [entries, annualEntries] = await Promise.all([
+      Entry.find({
+        userId,
+        date: { $gte: start, $lte: end }
+      }).lean(),
+      Entry.find({
+        userId,
+        date: { $gte: `${year}-01-01`, $lte: `${year}-12-31` },
+        dayStatus: { $in: ["sick", "leave"] }
+      }).lean()
+    ]);
 
     const workEntries = entries.filter((entry) => !isTimeOffStatus(entry.dayStatus));
     const totalDelayMinutes = workEntries.reduce((total, entry) => total + (entry.delayMinutes ?? 0), 0);
     const lunchDays = workEntries.filter((entry) => entry.hadLunch).length;
     const holidayDays = countHolidayDaysForMonth(month, entries, settings);
     const sickDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "sick").length;
-    const leaveDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "leave").length;
+    const leaveDays = entries.filter((entry) => normalizeDayStatus(entry.dayStatus) === "leave" && !isAdjustmentLeaveEntry(entry)).length;
+    const adjustmentLeaveDays = entries.filter((entry) => isAdjustmentLeaveEntry(entry)).length;
+    const annualLeaveUsedDays = annualEntries.filter((entry) => {
+      const status = normalizeDayStatus(entry.dayStatus);
+      return status === "sick" || (status === "leave" && !isAdjustmentLeaveEntry(entry));
+    }).length;
+    const annualLeaveRemainingDays = Math.max(0, ANNUAL_LEAVE_ALLOWANCE_DAYS - annualLeaveUsedDays);
     const lunchSpend = lunchDays * settings.lunchPrice;
     const workDays = workEntries.length;
     const allExpenses = entries.flatMap((entry) => normalizeDailyExpenses(entry.dailyExpenses, entry.dailyExpenseAmount, entry.dailyExpenseNote));
@@ -102,7 +118,11 @@ export async function GET(request: NextRequest) {
       holidayDays,
       sickDays,
       leaveDays,
+      adjustmentLeaveDays,
       workDays,
+      annualLeaveAllowanceDays: ANNUAL_LEAVE_ALLOWANCE_DAYS,
+      annualLeaveUsedDays,
+      annualLeaveRemainingDays,
       dailyExpenseTotal,
       dailyExpenseCount: allExpenses.length,
       expenseCategories,

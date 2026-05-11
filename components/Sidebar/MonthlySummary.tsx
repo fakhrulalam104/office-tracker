@@ -37,6 +37,10 @@ export function MonthlySummary({
   holidayDays,
   sickDays,
   leaveDays,
+  adjustmentLeaveDays,
+  annualLeaveAllowanceDays,
+  annualLeaveUsedDays,
+  annualLeaveRemainingDays,
   delayLimit,
   lunchPrice,
   currency,
@@ -51,6 +55,10 @@ export function MonthlySummary({
   holidayDays: number;
   sickDays: number;
   leaveDays: number;
+  adjustmentLeaveDays: number;
+  annualLeaveAllowanceDays: number;
+  annualLeaveUsedDays: number;
+  annualLeaveRemainingDays: number;
   delayLimit: number;
   lunchPrice: number;
   currency: string;
@@ -129,11 +137,33 @@ export function MonthlySummary({
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <p className="text-sm font-semibold text-slate-900">Time Off</p>
-            <p className="mt-1 text-sm text-slate-500">Holiday, sick, and other leave days are excluded from delay totals.</p>
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <p className="mt-1 text-sm text-slate-500">Monthly holiday, sick, and other leave days are excluded from delay totals.</p>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <StatPill label="Holiday" value={holidayDays} tone="emerald" />
               <StatPill label="Sick" value={sickDays} tone="violet" />
               <StatPill label="Other leave" value={leaveDays} tone="slate" />
+              <StatPill label="Adjustment" value={adjustmentLeaveDays} tone="slate" />
+            </div>
+            <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-indigo-950">Annual leave balance</p>
+                  <p className="mt-1 text-xs leading-5 text-indigo-700">Sick + regular leave only. Holidays, worked holidays, and adjustment leave are not counted.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-semibold text-indigo-950">{annualLeaveRemainingDays}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700">Left</p>
+                </div>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-white">
+                <div
+                  className="h-2 rounded-full bg-indigo-500"
+                  style={{ width: `${Math.min(100, Math.round((annualLeaveUsedDays / Math.max(1, annualLeaveAllowanceDays)) * 100))}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs font-medium text-indigo-700">
+                {annualLeaveUsedDays} used of {annualLeaveAllowanceDays} days this year
+              </p>
             </div>
           </div>
 
