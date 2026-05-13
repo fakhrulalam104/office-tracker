@@ -7,12 +7,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 type TraceMode = {
   label: string;
   maxSize: number;
+  minSize: number;
   colors: number;
   lineError: number;
   curveError: number;
   pathOmit: number;
   blurRadius: number;
   blurDelta: number;
+  colorQuantCycles: number;
+  rightAngleEnhance: boolean;
+  lineFilter: boolean;
 };
 
 type VectorStats = {
@@ -30,10 +34,62 @@ type TracedData = {
 };
 
 const traceModes: TraceMode[] = [
-  { label: "Ultra", maxSize: 1600, colors: 128, lineError: 0.22, curveError: 0.22, pathOmit: 1, blurRadius: 0, blurDelta: 18 },
-  { label: "High", maxSize: 1200, colors: 96, lineError: 0.35, curveError: 0.35, pathOmit: 2, blurRadius: 0, blurDelta: 20 },
-  { label: "Balanced", maxSize: 900, colors: 64, lineError: 0.55, curveError: 0.55, pathOmit: 4, blurRadius: 1, blurDelta: 20 },
-  { label: "Clean", maxSize: 760, colors: 32, lineError: 0.8, curveError: 0.8, pathOmit: 8, blurRadius: 1, blurDelta: 28 }
+  {
+    label: "Perfect",
+    maxSize: 3200,
+    minSize: 1800,
+    colors: 160,
+    lineError: 0.08,
+    curveError: 0.08,
+    pathOmit: 0,
+    blurRadius: 2,
+    blurDelta: 36,
+    colorQuantCycles: 8,
+    rightAngleEnhance: false,
+    lineFilter: false
+  },
+  {
+    label: "Smooth",
+    maxSize: 2600,
+    minSize: 1500,
+    colors: 128,
+    lineError: 0.14,
+    curveError: 0.14,
+    pathOmit: 1,
+    blurRadius: 2,
+    blurDelta: 32,
+    colorQuantCycles: 6,
+    rightAngleEnhance: false,
+    lineFilter: false
+  },
+  {
+    label: "Balanced",
+    maxSize: 2000,
+    minSize: 1200,
+    colors: 96,
+    lineError: 0.28,
+    curveError: 0.28,
+    pathOmit: 2,
+    blurRadius: 1,
+    blurDelta: 28,
+    colorQuantCycles: 5,
+    rightAngleEnhance: false,
+    lineFilter: true
+  },
+  {
+    label: "Clean",
+    maxSize: 1600,
+    minSize: 1000,
+    colors: 48,
+    lineError: 0.55,
+    curveError: 0.55,
+    pathOmit: 5,
+    blurRadius: 2,
+    blurDelta: 44,
+    colorQuantCycles: 4,
+    rightAngleEnhance: true,
+    lineFilter: true
+  }
 ];
 
 function formatBytes(value: number) {
@@ -77,7 +133,10 @@ function countPaths(layers: TracedData["layers"]) {
 }
 
 function addSvgTitle(svg: string, title: string) {
-  return svg.replace(/<svg([^>]*)>/, `<svg$1 role="img">\n<title>${title.replace(/[<>&"]/g, "")}</title>`);
+  return svg.replace(
+    /<svg([^>]*)>/,
+    `<svg$1 role="img" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="auto">\n<title>${title.replace(/[<>&"]/g, "")}</title>`
+  );
 }
 
 export function ImageVectorizerPageClient() {
@@ -86,9 +145,9 @@ export function ImageVectorizerPageClient() {
   const [svgUrl, setSvgUrl] = useState<string | null>(null);
   const [svgText, setSvgText] = useState("");
   const [stats, setStats] = useState<VectorStats | null>(null);
-  const [modeIndex, setModeIndex] = useState(1);
-  const [colorLayers, setColorLayers] = useState(traceModes[1].colors);
-  const [traceFullSize, setTraceFullSize] = useState(false);
+  const [modeIndex, setModeIndex] = useState(0);
+  const [colorLayers, setColorLayers] = useState(traceModes[0].colors);
+  const [traceFullSize, setTraceFullSize] = useState(true);
   const [vectorizing, setVectorizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -116,7 +175,7 @@ export function ImageVectorizerPageClient() {
   }
 
   function updateMode(nextIndex: number) {
-    const nextMode = traceModes[nextIndex] ?? traceModes[1];
+    const nextMode = traceModes[nextIndex] ?? traceModes[0];
     setModeIndex(nextIndex);
     setColorLayers(nextMode.colors);
     resetVector();
@@ -163,10 +222,11 @@ export function ImageVectorizerPageClient() {
       revokeImage = loaded.revoke;
       const sourceWidth = loaded.image.naturalWidth;
       const sourceHeight = loaded.image.naturalHeight;
-      const traceMax = traceFullSize ? Math.max(sourceWidth, sourceHeight) : selectedMode.maxSize;
-      const scaleDown = Math.min(1, traceMax / Math.max(sourceWidth, sourceHeight));
-      const traceWidth = Math.max(1, Math.round(sourceWidth * scaleDown));
-      const traceHeight = Math.max(1, Math.round(sourceHeight * scaleDown));
+      const sourceMax = Math.max(sourceWidth, sourceHeight);
+      const targetMax = traceFullSize ? Math.min(selectedMode.maxSize, Math.max(sourceMax, selectedMode.minSize)) : selectedMode.maxSize;
+      const traceScale = Math.min(selectedMode.maxSize / sourceMax, Math.max(1, targetMax / sourceMax));
+      const traceWidth = Math.max(1, Math.round(sourceWidth * traceScale));
+      const traceHeight = Math.max(1, Math.round(sourceHeight * traceScale));
       const outputScale = sourceWidth / traceWidth;
       const canvas = canvasRef.current ?? document.createElement("canvas");
       canvasRef.current = canvas;
@@ -188,16 +248,16 @@ export function ImageVectorizerPageClient() {
         ltres: selectedMode.lineError,
         qtres: selectedMode.curveError,
         pathomit: selectedMode.pathOmit,
-        rightangleenhance: true,
+        rightangleenhance: selectedMode.rightAngleEnhance,
         colorsampling: 2,
         numberofcolors: colorLayers,
         mincolorratio: 0.00005,
-        colorquantcycles: 4,
+        colorquantcycles: selectedMode.colorQuantCycles,
         layering: 0,
         strokewidth: 0,
-        linefilter: true,
+        linefilter: selectedMode.lineFilter,
         scale: outputScale,
-        roundcoords: 2,
+        roundcoords: 3,
         viewbox: true,
         desc: false,
         blurradius: selectedMode.blurRadius,
