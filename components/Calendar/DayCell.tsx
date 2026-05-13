@@ -1,6 +1,6 @@
 "use client";
 
-import { dayStatusLabel, defaultDayStatusForDate, normalizeDayStatus, normalizeLeaveType } from "@/lib/utils";
+import { defaultDayStatusForDate, normalizeDayStatus } from "@/lib/utils";
 import type { EntryItem } from "@/types";
 
 function CateringIcon() {
@@ -15,6 +15,14 @@ function CateringIcon() {
         strokeWidth="1.8"
       />
     </svg>
+  );
+}
+
+function WorkBadge({ delayed }: { delayed: boolean }) {
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${delayed ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
+      Work
+    </span>
   );
 }
 
@@ -38,7 +46,6 @@ export function DayCell({
   onClick: () => void;
 }) {
   const dayStatus = entry ? normalizeDayStatus(entry.dayStatus) : defaultDayStatusForDate(dateKey, { weeklyHolidays });
-  const leaveType = dayStatus === "leave" ? normalizeLeaveType(entry?.leaveType) : "regular";
   const delayMinutes = dayStatus === "work" ? entry?.delayMinutes ?? 0 : 0;
   const hadLunch = dayStatus === "work" ? entry?.hadLunch ?? false : false;
   const hasDelay = delayMinutes > 0;
@@ -71,19 +78,7 @@ export function DayCell({
                 ? "bg-sky-500"
                 : "bg-indigo-500";
 
-  const badgeClass =
-    dayStatus === "holiday"
-      ? "bg-emerald-100 text-emerald-700"
-      : dayStatus === "sick"
-        ? "bg-violet-100 text-violet-700"
-        : dayStatus === "leave"
-          ? "bg-slate-200 text-slate-700"
-          : warningTone
-            ? "bg-red-100 text-red-700"
-              : "bg-indigo-100 text-indigo-700";
-
   const todayClass = isToday ? "ring-2 ring-sky-500 ring-offset-2 ring-offset-slate-50" : "";
-  const todayLabelClass = isToday ? "text-sky-700" : "";
 
   return (
     <button
@@ -116,28 +111,12 @@ export function DayCell({
         </span>
       </div>
 
-      <div className="mt-4 space-y-1">
-        {isToday ? <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${todayLabelClass}`}>Today</p> : null}
-        {dayStatus === "holiday" ? null : dayStatus === "leave" && leaveType === "adjustment" ? (
-          <p className="text-xs font-medium text-slate-700">Adjustment leave</p>
-        ) : dayStatus !== "work" ? (
-          <p className="text-xs font-medium text-slate-700">{dayStatusLabel(dayStatus)}</p>
-        ) : null}
-      </div>
-
-      {entry || dayStatus === "holiday" ? (
-        <div className="absolute bottom-3 right-3 flex gap-1">
-          {dayStatus !== "work" ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badgeClass}`}>
-              {dayStatus === "leave" && leaveType === "adjustment" ? "Adjustment" : dayStatusLabel(dayStatus)}
-            </span>
-          ) : null}
-          {dayStatus === "work" ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${hasDelay ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
-              Work
-            </span>
-          ) : null}
+      {dayStatus === "work" && entry ? (
+        <div className="absolute bottom-3 right-3">
+          <WorkBadge delayed={hasDelay} />
         </div>
+      ) : entry || dayStatus === "holiday" ? (
+        <span className="absolute bottom-3 right-3 h-2 w-2 rounded-full bg-slate-300/70" aria-hidden="true" />
       ) : null}
     </button>
   );

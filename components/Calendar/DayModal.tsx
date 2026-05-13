@@ -122,6 +122,7 @@ export function DayModal({
   const draftExpenseNote = normalizeDailyExpenseNote(expenseDraftNote);
   const hasDraftExpense = draftExpenseAmount > 0 || Boolean(draftExpenseNote);
   const activeDailyExpense = totalDailyExpenses(dailyExpenses) + (hasDraftExpense ? draftExpenseAmount : 0);
+  const summaryStatus = dayStatus === "leave" && leaveType === "adjustment" ? "Adjustment leave" : dayStatusLabel(dayStatus);
 
   function addExpenseItem() {
     if (!hasDraftExpense) {
@@ -168,6 +169,29 @@ export function DayModal({
           >
             Close
           </button>
+        </div>
+
+        <div className="mb-6 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{summaryStatus}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Delay</p>
+            <p className={`mt-1 text-sm font-semibold ${isWorkDay && activeMinutes > 0 ? "text-amber-700" : "text-slate-950"}`}>
+              {isWorkDay ? `${activeMinutes} min` : "Cleared"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Lunch</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">{isWorkDay && hadLunch ? "Marked" : "No"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Expenses</p>
+            <p className="mt-1 text-sm font-semibold text-slate-950">
+              {activeDailyExpense.toLocaleString("en-US")} {currency}
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">

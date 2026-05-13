@@ -32,7 +32,6 @@ function StatPill({
 }
 
 export function MonthlySummary({
-  monthLabel,
   totalDelayMinutes,
   lunchDays,
   lunchSpend,
@@ -50,7 +49,6 @@ export function MonthlySummary({
   currency,
   loading
 }: {
-  monthLabel: string;
   totalDelayMinutes: number;
   lunchDays: number;
   lunchSpend: number;
@@ -90,7 +88,6 @@ export function MonthlySummary({
     <aside className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div>
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Monthly Summary</p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900">{monthLabel}</h2>
       </div>
 
       {loading ? (

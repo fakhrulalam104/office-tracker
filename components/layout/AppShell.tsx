@@ -258,12 +258,9 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
         ]
       }),
       groupItem({
-        label: "Work",
-        icon: "tasks",
+        label: "Tracking",
+        icon: "insights",
         items: [
-          linkItem({ href: "/tasks", label: "New Task", icon: "tasks" }),
-          linkItem({ href: "/task-board", label: "Task Board", icon: "tasks" }),
-          linkItem({ href: "/projects", label: "Projects", icon: "reports" }),
           linkItem({ href: "/company-calendar", label: "Company Calendar", icon: "insights" }),
           linkItem({ href: "/insights", label: "Insights", icon: "insights" }),
           linkItem({ href: "/reports", label: "Reports", icon: "reports" })
@@ -276,7 +273,6 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
           linkItem({ href: "/leave", label: "Leave", icon: "approvals" }),
           linkItem({ href: "/assets", label: "Assets", icon: "building" }),
           linkItem({ href: "/documents", label: "Documents", icon: "reports" }),
-          linkItem({ href: "/tickets", label: "Tickets", icon: "tasks" }),
           linkItem({ href: "/announcements", label: "Announcements", icon: "bell" }),
           linkItem({ href: "/admin/approvals", label: "Approvals", icon: "team" }),
           linkItem({ href: "/admin/notifications", label: "Notifications", icon: "bell" }),
@@ -300,17 +296,8 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
   return [
     linkItem({ href: "/dashboard", label: "Dashboard", icon: "dashboard" }),
     linkItem({ href: "/search", label: "Search", icon: "search" }),
-    groupItem({
-      label: "Work",
-      icon: "tasks",
-      items: [
-        linkItem({ href: "/tasks", label: role === "coordinator" ? "New Task" : "Tasks", icon: "tasks" }),
-        linkItem({ href: "/task-board", label: "Task Board", icon: "tasks" }),
-        ...(role === "coordinator" ? [linkItem({ href: "/projects", label: "Projects", icon: "reports" })] : []),
-        linkItem({ href: "/company-calendar", label: "Calendar", icon: "insights" }),
-        linkItem({ href: "/leave", label: "Leave", icon: "approvals" })
-      ]
-    }),
+    linkItem({ href: "/company-calendar", label: "Calendar", icon: "insights" }),
+    linkItem({ href: "/leave", label: "Leave", icon: "approvals" }),
     linkItem({ href: "/directory", label: "People", icon: "users" }),
     linkItem({ href: "/features", label: "Tools", icon: "features" }),
     groupItem({
@@ -318,7 +305,6 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
       icon: "notifications",
       items: [
         linkItem({ href: "/announcements", label: "Announcements", icon: "bell" }),
-        linkItem({ href: "/tickets", label: "Tickets", icon: "tasks" }),
         linkItem({ href: "/approvals", label: "Approvals", icon: "approvals" }),
         linkItem({ href: "/notifications", label: "Notifications", icon: "notifications" }),
         linkItem({ href: "/insights", label: "Insights", icon: "insights" }),

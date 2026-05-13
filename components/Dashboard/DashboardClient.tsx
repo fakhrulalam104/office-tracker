@@ -7,7 +7,24 @@ import { AlertBanner } from "@/components/ui/AlertBanner";
 import { DayModal } from "@/components/Calendar/DayModal";
 import { MonthCalendar } from "@/components/Calendar/MonthCalendar";
 import { MonthlySummary as SummaryCard } from "@/components/Sidebar/MonthlySummary";
-import { DEFAULT_USER_SETTINGS, getFineStateForLimit, monthLabel, monthNavigate, toMonthKey } from "@/lib/utils";
+import { DEFAULT_USER_SETTINGS, getFineStateForLimit, monthNavigate, toMonthKey } from "@/lib/utils";
+
+function Toast({ message, tone, onClose }: { message: string; tone: "success" | "danger"; onClose: () => void }) {
+  return (
+    <div className="fixed bottom-5 right-5 z-50 max-w-sm rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-soft">
+      <div className="flex items-start gap-3">
+        <span className={`mt-1 h-2.5 w-2.5 rounded-full ${tone === "success" ? "bg-emerald-500" : "bg-red-500"}`} />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-slate-950">{tone === "success" ? "Saved" : "Needs attention"}</p>
+          <p className="mt-1 text-slate-600">{message}</p>
+        </div>
+        <button type="button" onClick={onClose} className="rounded-full px-2 text-lg leading-none text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          x
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   const router = useRouter();
@@ -38,6 +55,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; tone: "success" | "danger" } | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -121,6 +139,15 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
 
   const status = useMemo(() => getFineStateForLimit(summary.totalDelayMinutes, summary.delayLimit), [summary.delayLimit, summary.totalDelayMinutes]);
   const selectedEntry = useMemo(() => entries.find((entry) => entry.date === selectedDate), [entries, selectedDate]);
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    const id = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   function goToMonth(nextMonth: string) {
     setMonth(nextMonth);
@@ -208,10 +235,13 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
       }
 
       await reloadMonth();
+      setToast({ message: "Day entry updated for the selected month.", tone: "success" });
       setModalOpen(false);
       setSelectedDate(null);
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save the entry.");
+      const message = saveError instanceof Error ? saveError.message : "Could not save the entry.";
+      setError(message);
+      setToast({ message, tone: "danger" });
     } finally {
       setSaving(false);
     }
@@ -233,10 +263,13 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
       }
 
       await reloadMonth();
+      setToast({ message: "Day entry cleared from the calendar.", tone: "success" });
       setModalOpen(false);
       setSelectedDate(null);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Could not delete the entry.");
+      const message = deleteError instanceof Error ? deleteError.message : "Could not delete the entry.";
+      setError(message);
+      setToast({ message, tone: "danger" });
     } finally {
       setSaving(false);
     }
@@ -255,7 +288,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         <AlertBanner tone={status.tone === "danger" ? "danger" : "warning"} message={bannerMessage} />
       ) : null}
 
-      <div className="mx-auto grid max-w-[1320px] gap-6 px-6 py-8 lg:grid-cols-[minmax(0,2fr)_340px] lg:px-10">
+      <div className="grid w-full gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:px-8">
         <div className="space-y-4">
           {error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -278,7 +311,6 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
 
         <div className="space-y-4">
           <SummaryCard
-            monthLabel={monthLabel(month)}
             totalDelayMinutes={summary.totalDelayMinutes}
             lunchDays={summary.lunchDays}
             lunchSpend={summary.lunchSpend}
@@ -323,6 +355,7 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
         onSave={handleSave}
         onDelete={handleDelete}
       />
+      {toast ? <Toast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
     </>
   );
 }

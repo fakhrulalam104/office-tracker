@@ -1,7 +1,5 @@
-import { WorkspaceItemsPageClient } from "@/components/pages/WorkspaceItemsPageClient";
-import { requireUser } from "@/lib/require-auth";
+import { redirect } from "next/navigation";
 
 export default async function TicketsPage() {
-  await requireUser();
-  return <WorkspaceItemsPageClient type="ticket" />;
+  redirect("/dashboard");
 }

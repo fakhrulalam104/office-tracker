@@ -74,14 +74,12 @@ export async function GET(request: Request) {
         .lean()
     ]);
 
+    const hiddenWorkspaceTypes = new Set(["task", "project", "ticket"]);
     const itemHref: Record<string, string> = {
-      task: "/task-board",
       leave: "/leave",
       announcement: "/announcements",
       asset: "/assets",
       document: "/documents",
-      project: "/projects",
-      ticket: "/tickets",
       calendar: "/company-calendar"
     };
 
@@ -94,14 +92,16 @@ export async function GET(request: Request) {
         href: "/directory",
         meta: normalizeUserRole(user.role, user.email).replace("_", " ")
       })),
-      ...workspaceItems.map((item) => ({
-        id: `workspace-${String(item._id)}`,
-        type: String(item.type).replace("_", " "),
-        title: item.title ?? "Untitled",
-        description: String(item.description ?? "").replace(/<[^>]*>/g, "").slice(0, 180),
-        href: itemHref[String(item.type)] ?? "/dashboard",
-        meta: [item.status, item.priority].filter(Boolean).join(" | ")
-      })),
+      ...workspaceItems
+        .filter((item) => !hiddenWorkspaceTypes.has(String(item.type)))
+        .map((item) => ({
+          id: `workspace-${String(item._id)}`,
+          type: String(item.type).replace("_", " "),
+          title: item.title ?? "Untitled",
+          description: String(item.description ?? "").replace(/<[^>]*>/g, "").slice(0, 180),
+          href: itemHref[String(item.type)] ?? "/dashboard",
+          meta: [item.status, item.priority].filter(Boolean).join(" | ")
+        })),
       ...notes.map((note) => ({
         id: `note-${String(note._id)}`,
         type: "Note",
