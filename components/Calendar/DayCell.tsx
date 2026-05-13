@@ -132,8 +132,10 @@ export function DayCell({
               {dayStatus === "leave" && leaveType === "adjustment" ? "Adjustment" : dayStatusLabel(dayStatus)}
             </span>
           ) : null}
-          {dayStatus === "work" && !delayMinutes ? (
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Work</span>
+          {dayStatus === "work" ? (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${hasDelay ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"}`}>
+              Work
+            </span>
           ) : null}
         </div>
       ) : null}
