@@ -35,8 +35,6 @@ export function MonthlySummary({
   totalDelayMinutes,
   lunchDays,
   lunchSpend,
-  dailyExpenseTotal,
-  dailyExpenseCount,
   holidayDays,
   sickDays,
   leaveDays,
@@ -52,8 +50,6 @@ export function MonthlySummary({
   totalDelayMinutes: number;
   lunchDays: number;
   lunchSpend: number;
-  dailyExpenseTotal: number;
-  dailyExpenseCount: number;
   holidayDays: number;
   sickDays: number;
   leaveDays: number;
@@ -123,16 +119,6 @@ export function MonthlySummary({
             </p>
             <p className="text-sm text-slate-500">
               {lunchDays} day{lunchDays === 1 ? "" : "s"} x {lunchPrice} {currency}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">Daily Expenses</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {dailyExpenseTotal.toLocaleString("en-US")} {currency}
-            </p>
-            <p className="text-sm text-slate-500">
-              {dailyExpenseCount} item{dailyExpenseCount === 1 ? "" : "s"} tracked outside lunch spend
             </p>
           </div>
 

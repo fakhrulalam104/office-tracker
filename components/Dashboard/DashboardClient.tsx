@@ -314,8 +314,6 @@ export function DashboardClient({ initialMonth }: { initialMonth: string }) {
             totalDelayMinutes={summary.totalDelayMinutes}
             lunchDays={summary.lunchDays}
             lunchSpend={summary.lunchSpend}
-            dailyExpenseTotal={summary.dailyExpenseTotal}
-            dailyExpenseCount={summary.dailyExpenseCount}
             holidayDays={summary.holidayDays}
             sickDays={summary.sickDays}
             leaveDays={summary.leaveDays}
