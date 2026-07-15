@@ -24,6 +24,7 @@ function formatElapsed(ms: number) {
 }
 
 export function StopwatchPageClient() {
+  const [backLoading, setBackLoading] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [running, setRunning] = useState(false);
   const [laps, setLaps] = useState<Lap[]>([]);
@@ -104,8 +105,8 @@ export function StopwatchPageClient() {
     >
       <div className="w-full max-w-[720px]">
         <div className={`mb-5 flex items-center justify-between gap-3 ${isFullscreen ? "text-slate-200" : "text-slate-600"}`}>
-          <Link href="/features" className="text-sm font-semibold transition hover:text-sky-600">
-            Back to features
+          <Link href="/features" onClick={() => setBackLoading(true)} className="text-sm font-semibold transition hover:text-sky-600">
+            {backLoading ? (<span className="inline-flex items-center gap-2"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" /> Loading...</span>) : ("Back to features")}
           </Link>
           <button
             type="button"

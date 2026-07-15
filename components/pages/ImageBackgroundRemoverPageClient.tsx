@@ -198,6 +198,7 @@ async function cleanTransparentEdges(sourceBlob: Blob, strength: number) {
 }
 
 export function ImageBackgroundRemoverPageClient() {
+  const [backLoading, setBackLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -349,8 +350,8 @@ export function ImageBackgroundRemoverPageClient() {
     <div className="min-h-screen bg-slate-50 px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/features" className="text-sm font-semibold text-slate-600 transition hover:text-sky-700">
-            Back to features
+          <Link href="/features" onClick={() => setBackLoading(true)} className="text-sm font-semibold text-slate-600 transition hover:text-sky-700">
+            {backLoading ? (<span className="inline-flex items-center gap-2"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" /> Loading...</span>) : ("Back to features")}
           </Link>
           <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">Local transparent PNG</span>
         </div>

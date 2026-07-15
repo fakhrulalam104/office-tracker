@@ -495,6 +495,7 @@ function OutputBox({ value, label = "Output" }: { value: string; label?: string 
 }
 
 export function DeveloperToolsPageClient() {
+  const [backLoading, setBackLoading] = useState(false);
   const [activeTool, setActiveTool] = useState<ToolKey>("json");
   const [jsonInput, setJsonInput] = useState('{"status":"ok","items":[1,2,3]}');
   const [jsonOutput, setJsonOutput] = useState("");
@@ -1021,8 +1022,8 @@ export function DeveloperToolsPageClient() {
       <div className="mx-auto max-w-[1440px]">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href="/features" className="text-sm font-semibold text-sky-700 transition hover:text-sky-900">
-              Back to tools
+            <Link href="/features" onClick={() => setBackLoading(true)} className="text-sm font-semibold text-sky-700 transition hover:text-sky-900">
+              {backLoading ? (<span className="inline-flex items-center gap-2"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" /> Loading...</span>) : ("Back to tools")}
             </Link>
             <h1 className="mt-3 text-3xl font-semibold tracking-normal text-slate-950">Developer Tools</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Small utilities for common IT, QA, frontend, backend, and support workflows.</p>
