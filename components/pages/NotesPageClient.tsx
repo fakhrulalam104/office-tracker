@@ -118,43 +118,67 @@ function RichToolbar({ editorRef }: { editorRef: React.RefObject<HTMLDivElement 
       </select>
 
       <ToolbarDivider />
-      <ToolbarButton onClick={() => execCmd("bold")} title="Bold"><b>B</b></ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("italic")} title="Italic"><i>I</i></ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("underline")} title="Underline"><u>U</u></ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("strikeThrough")} title="Strikethrough"><s>S</s></ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("bold")} title="Bold">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor"><path d="M4 2h5a3 3 0 011.8 5.4A3.5 3.5 0 0110.5 14H4V2zm2 5h3a1 1 0 000-2H6v2zm0 2v3h4.5a1.5 1.5 0 000-3H6z"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("italic")} title="Italic">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6 14h4M10 2H6M9 14l-3-10" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("underline")} title="Underline">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 2v6a4 4 0 008 0V2M3 14h10" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("strikeThrough")} title="Strikethrough">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 8h12M5.5 4h5a2.5 2.5 0 010 5M5.5 11h5a2.5 2.5 0 000-5" strokeLinecap="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
-      <ToolbarButton onClick={() => execCmd("subscript")} title="Subscript">X&#8322;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("superscript")} title="Superscript">X&#8325;</ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("subscript")} title="Subscript">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M4 4l4 4-4 4M10 12l3 2-3 2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("superscript")} title="Superscript">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M4 4l4-4-4 4M10 4l3-2-3 2M10 14h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
       <div className="relative">
-        <label title="Font color" className="flex items-center gap-0.5 cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
-          <span className="border-b-2" style={{ borderColor: fontColor }}>A</span>
+        <label title="Font color" className="flex items-center cursor-pointer rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke={fontColor} strokeWidth="1.8"><path d="M3 14l3-10 3 10M4.2 10h3.6M11 4v8M11 4c1 0 2.5 1 2.5 3s-1.5 3-2.5 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           <input type="color" value={fontColor} onChange={(e) => { setFontColor(e.target.value); execCmd("foreColor", e.target.value); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
         </label>
       </div>
       <div className="relative">
-        <label title="Highlight" className="flex items-center gap-0.5 cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
-          <span className="rounded px-0.5" style={{ backgroundColor: highlightColor }}>ab</span>
+        <label title="Highlight" className="flex items-center cursor-pointer rounded-lg px-2 py-1 text-slate-600 hover:bg-slate-100">
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5"><rect x="1" y="10" width="14" height="4" rx="1" fill={highlightColor} stroke="currentColor" strokeWidth="1"/><path d="M9.5 2l3 8M6.5 2L3 10M5 6h5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
           <input type="color" value={highlightColor} onChange={(e) => { setHighlightColor(e.target.value); execCmd("hiliteColor", e.target.value); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
         </label>
       </div>
 
       <ToolbarDivider />
-      <ToolbarButton onClick={() => execCmd("justifyLeft")} title="Align left">&#8676;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("justifyCenter")} title="Align center">&#8596;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("justifyRight")} title="Align right">&#8677;</ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("justifyLeft")} title="Align left">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h12M2 7h8M2 11h10M2 15h6" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("justifyCenter")} title="Align center">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h12M4 7h8M3 11h10M5 15h6" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("justifyRight")} title="Align right">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 3h12M6 7h8M4 11h10M8 15h6" strokeLinecap="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
-      <ToolbarButton onClick={() => execCmd("insertUnorderedList")} title="Bullet list">&#8226;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("insertOrderedList")} title="Numbered list">1.</ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("insertUnorderedList")} title="Bullet list">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="2.5" cy="4" r="1" fill="currentColor"/><circle cx="2.5" cy="8" r="1" fill="currentColor"/><circle cx="2.5" cy="12" r="1" fill="currentColor"/><path d="M6 4h8M6 8h8M6 12h8" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("insertOrderedList")} title="Numbered list">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.3"><path d="M1 3.5h1.5M1 7.5h1.5M1 11.5h1.5" strokeLinecap="round"/><text x="4" y="5" fontSize="3.5" fill="currentColor" stroke="none" fontWeight="600">1</text><text x="4" y="9" fontSize="3.5" fill="currentColor" stroke="none" fontWeight="600">2</text><text x="4" y="13" fontSize="3.5" fill="currentColor" stroke="none" fontWeight="600">3</text><path d="M8 4h6M8 8h6M8 12h6" strokeLinecap="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
-      <button type="button" onClick={() => setShowMore(!showMore)} title="More options" className={`rounded-lg px-2 py-1 text-xs font-semibold transition ${showMore ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
-        {showMore ? "Less" : "More"}
+      <button type="button" onClick={() => setShowMore(!showMore)} title="More options" className={`rounded-lg p-1.5 transition ${showMore ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor"><circle cx="3" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/><circle cx="13" cy="8" r="1.2"/></svg>
       </button>
-      <ToolbarButton onClick={() => execCmd("removeFormat")} title="Clear formatting">&#10005;</ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("removeFormat")} title="Clear formatting">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 2l8 12M2 8h12M7 2l-3 6M12 2l-3 6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
     </div>
   );
 }
@@ -182,25 +206,41 @@ function MoreToolbar({ editorRef }: { editorRef: React.RefObject<HTMLDivElement 
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-slate-200 bg-white px-3 py-2 mt-2">
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Case</span>
-      <ToolbarButton onClick={() => toCase("sentence")} title="Sentence case">Sntc</ToolbarButton>
-      <ToolbarButton onClick={() => toCase("lower")} title="lowercase">abc</ToolbarButton>
-      <ToolbarButton onClick={() => toCase("upper")} title="UPPERCASE">ABC</ToolbarButton>
-      <ToolbarButton onClick={() => toCase("capitalize")} title="Capitalize Each Word">Abc</ToolbarButton>
-      <ToolbarButton onClick={() => toCase("toggle")} title="tOGGLE cASE">tOGG</ToolbarButton>
+    <div className="flex flex-wrap items-center gap-0.5 rounded-2xl border border-slate-200 bg-white px-2 py-1.5 mt-2">
+      <ToolbarButton onClick={() => toCase("sentence")} title="Sentence case">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h4M4 4v8M6 8h2M6 12h2M10 4l2 8M14 4l-2 8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => toCase("lower")} title="lowercase">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12V4h3l2 4 2-4h3v8M2 8h4M10 8h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => toCase("upper")} title="UPPERCASE">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12V4h5l3 5.5L12 4h3v8M4 12h2M10 12h2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => toCase("capitalize")} title="Capitalize Each Word">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12V4h3l1.5 3L7 4h2v8M10 12V4h3l1.5 3L16 4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => toCase("toggle")} title="tOGGLE cASE">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h4M4 4v8M7 12V4l2.5 4L12 4v8M14 4v8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Style</span>
-      <ToolbarButton onClick={() => execCmd("smallCaps")} title="Small Caps">Sc</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("strikeThrough")} title="Strikethrough"><s>ab</s></ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("smallCaps")} title="Small Caps">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12V4h4l2 4 2-4h4v8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
 
       <ToolbarDivider />
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1">Insert</span>
-      <ToolbarButton onClick={() => execCmd("insertHorizontalRule")} title="Horizontal line">―</ToolbarButton>
-      <ToolbarButton onClick={() => { const url = prompt("Enter link URL:"); if (url) execCmd("createLink", url); }} title="Insert link">&#128279;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("undo")} title="Undo">&#8617;</ToolbarButton>
-      <ToolbarButton onClick={() => execCmd("redo")} title="Redo">&#8618;</ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("insertHorizontalRule")} title="Horizontal line">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 8h12" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => { const url = prompt("Enter link URL:"); if (url) execCmd("createLink", url); }} title="Insert link">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M6.5 9.5a3.5 3.5 0 005 0l2-2a3.5 3.5 0 00-5-5l-1 1M9.5 6.5a3.5 3.5 0 00-5 0l-2 2a3.5 3.5 0 005 5l1-1" strokeLinecap="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("undo")} title="Undo">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h7a3 3 0 010 6H8M3 6l3-3M3 6l3 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
+      <ToolbarButton onClick={() => execCmd("redo")} title="Redo">
+        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M13 6H6a3 3 0 000 6h2M13 6l-3-3M13 6l-3 3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </ToolbarButton>
     </div>
   );
 }
