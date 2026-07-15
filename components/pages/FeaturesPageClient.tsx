@@ -193,6 +193,13 @@ const features = [
     description: "Developer color picker with HEX, RGB, HSL, contrast checker, and Tailwind palette.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/features/responsive-checker",
+    label: "Responsive Checker",
+    description: "Test any website across 50+ real devices — phones, tablets, laptops, and desktops.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
