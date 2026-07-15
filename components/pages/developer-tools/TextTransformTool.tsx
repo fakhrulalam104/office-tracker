@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Card, OutputBox, textAreaClass, buttonClass, softButtonClass } from "./shared";
+import { useState } from "react";
+import { Card, textAreaClass } from "./shared";
 
 function toCamelCase(s: string) {
   return s.replace(/[-_\s]+(.)/g, (_, c) => c.toUpperCase()).replace(/^(.)/, (_, c) => c.toLowerCase());
@@ -32,6 +32,14 @@ function toPathCase(s: string) {
   return toSnakeCase(s).replace(/_/g, "/");
 }
 
+function toCapitalize(s: string) {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function toSentenceCase(s: string) {
+  return s.replace(/(^\s*[a-z]|\.\s+[a-z]|!\s+[a-z]|\?\s+[a-z])/g, (c) => c.toUpperCase());
+}
+
 function unicodeEscape(s: string) {
   return Array.from(s).map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`).join("");
 }
@@ -53,7 +61,6 @@ function wordCount(s: string) {
 
 export function TextTransformTool() {
   const [input, setInput] = useState("hello-world example_text");
-  const [output, setOutput] = useState("");
 
   const transforms = [
     { label: "camelCase", fn: toCamelCase },
@@ -63,9 +70,10 @@ export function TextTransformTool() {
     { label: "CONSTANT_CASE", fn: toConstantCase },
     { label: "dot.case", fn: toDotCase },
     { label: "path/case", fn: toPathCase },
+    { label: "Capitalize", fn: toCapitalize },
+    { label: "Sentence case", fn: toSentenceCase },
     { label: "UPPERCASE", fn: (s: string) => s.toUpperCase() },
     { label: "lowercase", fn: (s: string) => s.toLowerCase() },
-    { label: "Title Case", fn: (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase()) },
     { label: "Unicode Escape", fn: unicodeEscape },
     { label: "HTML Entities", fn: htmlEntities },
     { label: "Reverse", fn: reverseString },
@@ -82,7 +90,7 @@ export function TextTransformTool() {
           <button
             key={t.label}
             type="button"
-            onClick={() => setOutput(t.fn(input))}
+            onClick={() => setInput(t.fn(input))}
             className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-sky-200 hover:bg-sky-50"
           >
             <span className="block text-sm font-semibold text-slate-950">{t.label}</span>
@@ -90,7 +98,6 @@ export function TextTransformTool() {
           </button>
         ))}
       </div>
-      {output && <OutputBox value={output} label="Result" />}
     </div>
   );
 }
