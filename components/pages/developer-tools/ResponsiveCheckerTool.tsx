@@ -115,9 +115,23 @@ export function ResponsiveCheckerTool() {
   const [loading, setLoading] = useState(false);
 
   const filteredDevices = devices.filter((d) => d.category === category);
+  const isLandscapeDevice = category === "laptops" || category === "desktops";
 
-  const activeWidth = category === "custom" ? customWidth : (orientation === "landscape" ? Math.max(selectedDevice.width, selectedDevice.height) : Math.min(selectedDevice.width, selectedDevice.height));
-  const activeHeight = category === "custom" ? customHeight : (orientation === "landscape" ? Math.min(selectedDevice.width, selectedDevice.height) : Math.max(selectedDevice.width, selectedDevice.height));
+  const activeWidth = category === "custom"
+    ? customWidth
+    : isLandscapeDevice
+      ? Math.max(selectedDevice.width, selectedDevice.height)
+      : orientation === "landscape"
+        ? Math.max(selectedDevice.width, selectedDevice.height)
+        : Math.min(selectedDevice.width, selectedDevice.height);
+
+  const activeHeight = category === "custom"
+    ? customHeight
+    : isLandscapeDevice
+      ? Math.min(selectedDevice.width, selectedDevice.height)
+      : orientation === "landscape"
+        ? Math.min(selectedDevice.width, selectedDevice.height)
+        : Math.max(selectedDevice.width, selectedDevice.height);
 
   function loadUrl() {
     let finalUrl = inputUrl.trim();
@@ -170,7 +184,7 @@ export function ResponsiveCheckerTool() {
         <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:self-start">
           <div className="flex flex-wrap gap-1.5 mb-4">
             {categories.map((c) => (
-              <button key={c.key} type="button" onClick={() => { setCategory(c.key); if (c.key !== "custom" && devices.filter((d) => d.category === c.key).length > 0) setSelectedDevice(devices.filter((d) => d.category === c.key)[0]); }}
+              <button key={c.key} type="button" onClick={() => { setCategory(c.key); if (c.key !== "custom" && devices.filter((d) => d.category === c.key).length > 0) { setSelectedDevice(devices.filter((d) => d.category === c.key)[0]); } }}
                 className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${category === c.key ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"}`}>
                 {c.label}
               </button>
@@ -179,22 +193,26 @@ export function ResponsiveCheckerTool() {
 
           {category !== "custom" && (
             <>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{orientation === "portrait" ? "Portrait" : "Landscape"}</span>
-                <button type="button" onClick={() => setOrientation((o) => o === "portrait" ? "landscape" : "portrait")} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                  {orientation === "portrait" ? "→" : "↑"}
-                </button>
-              </div>
-              <div className="space-y-1 max-h-[400px] overflow-y-auto">
-                {filteredDevicesList.map((d) => (
-                  <button key={d.name} type="button" onClick={() => setSelectedDevice(d)}
-                    className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition ${selectedDevice.name === d.name ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-50"}`}>
-                    <span className="text-xs font-semibold">{d.name}</span>
-                    <span className={`text-[10px] font-mono ${selectedDevice.name === d.name ? "text-slate-400" : "text-slate-400"}`}>
-                      {orientation === "portrait" ? Math.min(d.width, d.height) : Math.max(d.width, d.height)}x{orientation === "portrait" ? Math.max(d.width, d.height) : Math.min(d.width, d.height)}
-                    </span>
+              {!isLandscapeDevice && (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{orientation === "portrait" ? "Portrait" : "Landscape"}</span>
+                  <button type="button" onClick={() => setOrientation((o) => o === "portrait" ? "landscape" : "portrait")} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                    {orientation === "portrait" ? "→" : "↑"}
                   </button>
-                ))}
+                </div>
+              )}
+              <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                {filteredDevicesList.map((d) => {
+                  const dw = isLandscapeDevice ? Math.max(d.width, d.height) : (orientation === "landscape" ? Math.max(d.width, d.height) : Math.min(d.width, d.height));
+                  const dh = isLandscapeDevice ? Math.min(d.width, d.height) : (orientation === "landscape" ? Math.min(d.width, d.height) : Math.max(d.width, d.height));
+                  return (
+                    <button key={d.name} type="button" onClick={() => setSelectedDevice(d)}
+                      className={`w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition ${selectedDevice.name === d.name ? "bg-slate-950 text-white" : "text-slate-700 hover:bg-slate-50"}`}>
+                      <span className="text-xs font-semibold">{d.name}</span>
+                      <span className="text-[10px] font-mono text-slate-400">{dw}x{dh}</span>
+                    </button>
+                  );
+                })}
               </div>
               {filteredDevices.length > 8 && (
                 <button type="button" onClick={() => setShowAll(!showAll)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
