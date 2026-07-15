@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/pages/PageHeader";
 
 const features = [
@@ -189,6 +189,8 @@ const features = [
   }
 ];
 
+const pinStorageKey = "office-tracker-pinned-features";
+
 function FeatureIcon({ name }: { name: string }) {
   if (name === "tools") {
     return (
@@ -237,8 +239,50 @@ function FeatureIcon({ name }: { name: string }) {
   );
 }
 
+function StarIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function FeaturesPageClient() {
   const [loading, setLoading] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(pinStorageKey);
+      if (stored) setPinned(new Set(JSON.parse(stored)));
+    } catch {}
+  }, []);
+
+  function togglePin(href: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setPinned((prev) => {
+      const next = new Set(prev);
+      if (next.has(href)) next.delete(href);
+      else next.add(href);
+      localStorage.setItem(pinStorageKey, JSON.stringify([...next]));
+      return next;
+    });
+  }
+
+  const sorted = [...features].sort((a, b) => {
+    const ap = pinned.has(a.href) ? 0 : 1;
+    const bp = pinned.has(b.href) ? 0 : 1;
+    return ap - bp;
+  });
+
+  const pinnedCount = pinned.size;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 px-4 py-6 lg:px-8">
@@ -248,36 +292,55 @@ export function FeaturesPageClient() {
         description="A growing collection of lightweight apps users can open whenever they need a little extra utility during the day."
       />
 
+      {pinnedCount > 0 && (
+        <p className="text-xs font-semibold text-slate-500">{pinnedCount} pinned tool{pinnedCount !== 1 ? "s" : ""} shown first</p>
+      )}
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {features.map((feature) => (
-          <Link
-            key={feature.href}
-            href={feature.href}
-            onClick={() => setLoading(feature.href)}
-            className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white">
-                <FeatureIcon name={feature.icon} />
-              </span>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{feature.status}</span>
-            </div>
-            <div className="mt-5">
-              <h2 className="text-lg font-semibold text-slate-950">{feature.label}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
-            </div>
-            <div className="mt-6 text-sm font-semibold text-sky-700 transition group-hover:text-sky-800">
-              {loading === feature.href ? (
-                <span className="inline-flex items-center gap-2">
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
-                  Loading...
+        {sorted.map((feature) => {
+          const isPinned = pinned.has(feature.href);
+          return (
+            <Link
+              key={feature.href}
+              href={feature.href}
+              onClick={() => setLoading(feature.href)}
+              className={`group relative rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                isPinned ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200 hover:border-sky-200"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <span className={`grid h-12 w-12 place-items-center rounded-2xl text-white ${isPinned ? "bg-amber-500" : "bg-slate-950"}`}>
+                  <FeatureIcon name={feature.icon} />
                 </span>
-              ) : (
-                "Open app"
-              )}
-            </div>
-          </Link>
-        ))}
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{feature.status}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => togglePin(feature.href, e)}
+                    className={`rounded-full p-1.5 transition ${isPinned ? "text-amber-500 hover:text-amber-600" : "text-slate-300 hover:text-slate-500"}`}
+                    title={isPinned ? "Unpin" : "Pin to top"}
+                  >
+                    <StarIcon filled={isPinned} />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-semibold text-slate-950">{feature.label}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
+              </div>
+              <div className="mt-6 text-sm font-semibold text-sky-700 transition group-hover:text-sky-800">
+                {loading === feature.href ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
+                    Loading...
+                  </span>
+                ) : (
+                  "Open app"
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </section>
     </div>
   );
