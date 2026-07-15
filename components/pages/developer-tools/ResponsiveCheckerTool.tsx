@@ -114,6 +114,8 @@ export function ResponsiveCheckerTool() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filteredDevices = devices.filter((d) => d.category === category);
   const isLandscapeDevice = category === "laptops" || category === "desktops";
@@ -145,6 +147,22 @@ export function ResponsiveCheckerTool() {
     setHistory((prev) => [finalUrl, ...prev.filter((h) => h !== finalUrl)].slice(0, 10));
     setLoading(true);
     setIframeError(false);
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  function doCopy(text: string, key: string) {
+    copyText(text);
+    setCopiedKey(key);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopiedKey(null), 1500);
+  }
+
+  function openInNewWindow() {
+    const w = window.open(url, "_blank", `width=${activeWidth},height=${activeHeight}`);
+    if (!w) {
+      doCopy(`${url} (${activeWidth}x${activeHeight})`, "popup-blocked");
+    }
   }
 
   function calculateScale() {
@@ -262,8 +280,10 @@ export function ResponsiveCheckerTool() {
               <span className="text-xs text-slate-500">{activeWidth} x {activeHeight}</span>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => { const w = window.open(url, "_blank"); if (w) { w.resizeTo(activeWidth, activeHeight); w.moveTo(0, 0); } }} className={buttonClass}>Open in new window</button>
-              <button type="button" onClick={() => copyText(url)} className={softButtonClass}>Copy URL</button>
+              <button type="button" onClick={openInNewWindow} className={buttonClass}>Open in new window</button>
+              <button type="button" onClick={() => doCopy(url, "url")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "url" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                {copiedKey === "url" ? "Copied!" : "Copy URL"}
+              </button>
             </div>
           </div>
           <div className="flex items-center justify-center bg-slate-100 p-6 overflow-auto" style={{ minHeight: 600 }}>
@@ -278,10 +298,12 @@ export function ResponsiveCheckerTool() {
                     <p className="mt-1 text-xs text-amber-700">The website sets security headers (X-Frame-Options) that prevent it from loading inside an iframe. This is a browser security restriction.</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { const w = window.open(url, "_blank"); if (w) { w.resizeTo(activeWidth, activeHeight); w.moveTo(0, 0); } }} className={buttonClass}>
+                    <button type="button" onClick={openInNewWindow} className={buttonClass}>
                       Open at {activeWidth}x{activeHeight}
                     </button>
-                    <button type="button" onClick={() => { navigator.clipboard?.writeText(`Device Toolbar > ${activeWidth} x ${activeHeight}`); }} className={softButtonClass}>Copy size</button>
+                    <button type="button" onClick={() => doCopy(`${activeWidth} x ${activeHeight}`, "size")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "size" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                      {copiedKey === "size" ? "Copied!" : "Copy size"}
+                    </button>
                   </div>
                   <p className="text-[10px] text-amber-600">Tip: Use Chrome DevTools Device Toolbar (Ctrl+Shift+M) with the copied size for full responsive testing.</p>
                 </div>
