@@ -158,13 +158,6 @@ export function ResponsiveCheckerTool() {
     timerRef.current = setTimeout(() => setCopiedKey(null), 1500);
   }
 
-  function openInNewWindow() {
-    const w = window.open(url, "_blank");
-    if (!w || w.closed || typeof w.closed === "undefined") {
-      doCopy(url, "blocked");
-    }
-  }
-
   function handleIframeLoad() {
     setLoading(false);
     setTimeout(() => {
@@ -294,7 +287,7 @@ export function ResponsiveCheckerTool() {
               <span className="text-xs text-slate-500">{activeWidth} x {activeHeight}</span>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={openInNewWindow} className={buttonClass}>Open in new window</button>
+              <a href={url} target="_blank" rel="noopener noreferrer" className={buttonClass + " text-center"}>Open in new tab</a>
               <button type="button" onClick={() => doCopy(url, "url")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "url" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
                 {copiedKey === "url" ? "Copied!" : "Copy URL"}
               </button>
@@ -312,9 +305,9 @@ export function ResponsiveCheckerTool() {
                     <p className="mt-1 text-xs text-amber-700">The website sets security headers (X-Frame-Options) that prevent it from loading inside an iframe. This is a browser security restriction.</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={openInNewWindow} className={buttonClass}>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className={buttonClass + " text-center"}>
                       Open in new tab
-                    </button>
+                    </a>
                     <button type="button" onClick={() => doCopy(url, "error-url")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "error-url" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
                       {copiedKey === "error-url" ? "Copied!" : "Copy URL"}
                     </button>
