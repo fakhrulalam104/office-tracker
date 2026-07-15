@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Card, OutputBox, formatBytes } from "./shared";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Card, inputClass, buttonClass, softButtonClass, copyText, formatBytes } from "./shared";
+
+type ExifEntry = { tag: string; value: string; rawTag: number };
 
 type Metadata = {
   name: string;
@@ -10,104 +12,147 @@ type Metadata = {
   lastModified: string;
   width: number | null;
   height: number | null;
-  exif: Record<string, string>;
+  exif: ExifEntry[];
 };
 
-async function getMetadata(file: File): Promise<Metadata> {
-  const meta: Metadata = {
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    lastModified: new Date(file.lastModified).toLocaleString(),
-    width: null,
-    height: null,
-    exif: {}
-  };
+const tagNames: Record<number, string> = {
+  0x010F: "Make",
+  0x0110: "Model",
+  0x0112: "Orientation",
+  0x011A: "XResolution",
+  0x011B: "YResolution",
+  0x0131: "Software",
+  0x0132: "DateTime",
+  0x013B: "Artist",
+  0x8298: "Copyright",
+  0x8769: "ExifOffset",
+  0x829A: "ExposureTime",
+  0x829D: "FNumber",
+  0x8827: "ISOSpeedRatings",
+  0x9003: "DateTimeOriginal",
+  0x9004: "DateTimeDigitized",
+  0x920A: "FocalLength",
+  0xA001: "ColorSpace",
+  0xA002: "PixelXDimension",
+  0xA003: "PixelYDimension",
+  0xA405: "FocalLengthIn35mmFilm",
+  0xA420: "ImageUniqueID",
+  0x0213: "YCbCrPositioning",
+  0x0103: "Compression",
+  0x0100: "ImageWidth",
+  0x0101: "ImageHeight",
+};
 
-  try {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Could not load image"));
-      img.src = url;
-    });
-    meta.width = img.naturalWidth;
-    meta.height = img.naturalHeight;
-    URL.revokeObjectURL(url);
-  } catch {}
+function readExif(file: File): Promise<ExifEntry[]> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const buffer = reader.result as ArrayBuffer;
+        const view = new DataView(buffer);
+        const entries: ExifEntry[] = [];
 
-  try {
-    const buffer = await file.arrayBuffer();
-    const view = new DataView(buffer);
-    if (view.getUint16(0, false) === 0xFFD8) {
-      let offset = 2;
-      while (offset < view.byteLength - 1) {
-        if (view.getUint16(offset, false) === 0xFFE1) {
-          const exifLength = view.getUint16(offset + 2, false);
-          const exifStart = offset + 4;
-          const tiffOffset = exifStart;
-          const bigEndian = view.getUint16(tiffOffset, false) === 0x4D4D;
+        if (view.getUint16(0, false) !== 0xFFD8) {
+          resolve(entries);
+          return;
+        }
 
-          const ifdOffset = view.getUint32(tiffOffset + 4, !bigEndian) + tiffOffset;
-          const numEntries = view.getUint16(ifdOffset, !bigEndian);
+        let offset = 2;
+        while (offset < view.byteLength - 1) {
+          if (view.getUint16(offset, false) === 0xFFE1) {
+            const exifStart = offset + 4;
+            const tiffOffset = exifStart;
+            const bigEndian = view.getUint16(tiffOffset, false) === 0x4D4D;
+            const ifdOffset = view.getUint32(tiffOffset + 4, !bigEndian) + tiffOffset;
+            const numEntries = view.getUint16(ifdOffset, !bigEndian);
 
-          for (let i = 0; i < numEntries; i++) {
-            const entryOffset = ifdOffset + 2 + i * 12;
-            if (entryOffset + 12 > view.byteLength) break;
-            const tag = view.getUint16(entryOffset, !bigEndian);
-            const type = view.getUint16(entryOffset + 2, !bigEndian);
-            const count = view.getUint32(entryOffset + 4, !bigEndian);
+            for (let i = 0; i < numEntries; i++) {
+              const entryOffset = ifdOffset + 2 + i * 12;
+              if (entryOffset + 12 > view.byteLength) break;
+              const tag = view.getUint16(entryOffset, !bigEndian);
+              const type = view.getUint16(entryOffset + 2, !bigEndian);
+              const count = view.getUint32(entryOffset + 4, !bigEndian);
 
-            const tagNames: Record<number, string> = {
-              0x010F: "Make", 0x0110: "Model", 0x0112: "Orientation",
-              0x011A: "XResolution", 0x011B: "YResolution",
-              0x0131: "Software", 0x0132: "DateTime",
-              0x0213: "YCbCrPositioning", 0x8769: "ExifOffset"
-            };
-
-            if (tagNames[tag]) {
               let val = "";
-              if (type === 2 && count <= 100) {
+              if (type === 2 && count <= 200) {
                 const strOffset = count <= 4 ? entryOffset + 8 : view.getUint32(entryOffset + 8, !bigEndian) + tiffOffset;
-                for (let c = 0; c < count - 1; c++) {
+                for (let c = 0; c < count - 1 && strOffset + c < view.byteLength; c++) {
                   val += String.fromCharCode(view.getUint8(strOffset + c));
                 }
               } else if (type === 3) {
                 val = String(view.getUint16(entryOffset + 8, !bigEndian));
               } else if (type === 4) {
                 val = String(view.getUint32(entryOffset + 8, !bigEndian));
+              } else if (type === 5) {
+                const num = view.getUint32(entryOffset + 8, !bigEndian);
+                const den = view.getUint32(entryOffset + 12, !bigEndian);
+                val = den ? (num / den).toFixed(2) : String(num);
               }
-              if (val) meta.exif[tagNames[tag]] = val;
-            }
-          }
-          break;
-        }
-        offset += 2;
-      }
-    }
-  } catch {}
 
-  return meta;
+              if (val && tag !== 0x8769) {
+                entries.push({ tag: tagNames[tag] || "Tag 0x" + tag.toString(16).toUpperCase(), value: val, rawTag: tag });
+              }
+            }
+            break;
+          }
+          offset += 2;
+        }
+        resolve(entries);
+      } catch {
+        resolve([]);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }
 
-export function ImageMetadataViewerTool() {
+function loadImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const dims = { width: img.naturalWidth, height: img.naturalHeight };
+      URL.revokeObjectURL(url);
+      resolve(dims);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+export function ImageMetadataEditorTool() {
   const [meta, setMeta] = useState<Metadata | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [newTag, setNewTag] = useState("");
+  const [newValue, setNewValue] = useState("");
+  const fileRef = useRef<File | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
 
   async function handleFile(file: File | null) {
-    if (!file || !file.type.startsWith("image/")) {
-      setMeta(null);
-      return;
-    }
+    if (!file || !file.type.startsWith("image/")) { setMeta(null); return; }
     setLoading(true);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
+    fileRef.current = file;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+
     try {
-      const data = await getMetadata(file);
-      setMeta(data);
+      const [exif, dims] = await Promise.all([readExif(file), loadImageDimensions(file)]);
+      setMeta({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: new Date(file.lastModified).toLocaleString(),
+        width: dims?.width ?? null,
+        height: dims?.height ?? null,
+        exif
+      });
     } catch {
       setMeta(null);
     } finally {
@@ -115,24 +160,50 @@ export function ImageMetadataViewerTool() {
     }
   }
 
-  const output = useMemo(() => {
-    if (!meta) return "";
-    const rows = [
-      ["File name", meta.name],
-      ["File size", formatBytes(meta.size)],
-      ["MIME type", meta.type],
-      ["Last modified", meta.lastModified],
-      ["Width", meta.width ? meta.width + "px" : "N/A"],
-      ["Height", meta.height ? meta.height + "px" : "N/A"],
-      ["Megapixels", meta.width && meta.height ? (meta.width * meta.height / 1_000_000).toFixed(2) + " MP" : "N/A"],
-      ...Object.entries(meta.exif).map(([k, v]) => ["EXIF: " + k, v])
-    ];
-    return rows.map(([k, v]) => k.padEnd(22) + v).join("\n");
-  }, [meta]);
+  function updateEntry(index: number, field: "tag" | "value", val: string) {
+    if (!meta) return;
+    const next = [...meta.exif];
+    next[index] = { ...next[index], [field]: val };
+    setMeta({ ...meta, exif: next });
+  }
+
+  function deleteEntry(index: number) {
+    if (!meta) return;
+    setMeta({ ...meta, exif: meta.exif.filter((_, i) => i !== index) });
+  }
+
+  function addEntry() {
+    if (!meta || !newTag.trim() || !newValue.trim()) return;
+    setMeta({ ...meta, exif: [...meta.exif, { tag: newTag.trim(), value: newValue.trim(), rawTag: 0 }] });
+    setNewTag("");
+    setNewValue("");
+  }
+
+  function handleCopyAll() {
+    if (!meta) return;
+    const text = [
+      `File: ${meta.name}`,
+      `Size: ${formatBytes(meta.size)}`,
+      `Type: ${meta.type}`,
+      `Modified: ${meta.lastModified}`,
+      `Dimensions: ${meta.width ?? "N/A"} x ${meta.height ?? "N/A"}`,
+      "",
+      ...meta.exif.map((e) => `${e.tag}: ${e.value}`)
+    ].join("\n");
+    copyText(text);
+    setCopied(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 1500);
+  }
+
+  function resetToOriginal() {
+    if (!fileRef.current) return;
+    handleFile(fileRef.current);
+  }
 
   return (
     <div className="space-y-4">
-      <Card title="Image Metadata Viewer">
+      <Card title="Image Metadata Editor">
         <label className="block rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5 transition hover:border-sky-300 hover:bg-sky-50">
           <span className="text-sm font-semibold text-slate-700">Select an image</span>
           <input type="file" accept="image/*" onChange={(e) => void handleFile(e.target.files?.[0] ?? null)} className="mt-3 block w-full text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white" />
@@ -144,7 +215,58 @@ export function ImageMetadataViewerTool() {
           </div>
         )}
       </Card>
-      {output && <OutputBox value={output} label="Metadata" />}
+
+      {meta && (
+        <>
+          <Card title="File Info">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[
+                ["File name", meta.name],
+                ["File size", formatBytes(meta.size)],
+                ["MIME type", meta.type],
+                ["Modified", meta.lastModified],
+                ["Width", meta.width ? meta.width + "px" : "N/A"],
+                ["Height", meta.height ? meta.height + "px" : "N/A"],
+                ["Megapixels", meta.width && meta.height ? (meta.width * meta.height / 1_000_000).toFixed(2) + " MP" : "N/A"]
+              ].map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="text-xs font-semibold text-slate-500">{k}</span>
+                  <span className="text-sm font-semibold text-slate-800">{v}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title={`Metadata (${meta.exif.length} tags)`}>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button type="button" onClick={handleCopyAll} className={copied ? "rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 transition" : softButtonClass}>
+                {copied ? "Copied!" : "Copy all"}
+              </button>
+              <button type="button" onClick={resetToOriginal} className={softButtonClass}>Reset to original</button>
+            </div>
+
+            {meta.exif.length === 0 ? (
+              <p className="text-sm text-slate-500">No EXIF metadata found in this image.</p>
+            ) : (
+              <div className="space-y-2">
+                {meta.exif.map((entry, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+                    <input value={entry.tag} onChange={(e) => updateEntry(i, "tag", e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100" />
+                    <input value={entry.value} onChange={(e) => updateEntry(i, "value", e.target.value)} className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-mono text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100" />
+                    <button type="button" onClick={() => deleteEntry(i)} className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50">Delete</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+              <input value={newTag} onChange={(e) => setNewTag(e.target.value)} placeholder="Tag name" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100" />
+              <input value={newValue} onChange={(e) => setNewValue(e.target.value)} placeholder="Value" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-800 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100" />
+              <button type="button" onClick={addEntry} disabled={!newTag.trim() || !newValue.trim()} className={buttonClass + " disabled:opacity-40"}>Add</button>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -16,5 +16,5 @@ export { MarkdownToSlidesTool } from "./MarkdownToSlidesTool";
 export { JsonToTypescriptTool } from "./JsonToTypescriptTool";
 export { LoremIpsumGeneratorTool } from "./LoremIpsumGeneratorTool";
 export { UnitConverterTool } from "./UnitConverterTool";
-export { ImageMetadataViewerTool } from "./ImageMetadataViewerTool";
+export { ImageMetadataEditorTool } from "./ImageMetadataViewerTool";
 export { RegexPlaybookTool } from "./RegexPlaybookTool";

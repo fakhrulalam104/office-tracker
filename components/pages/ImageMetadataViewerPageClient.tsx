@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ImageMetadataViewerTool } from "@/components/pages/developer-tools/ImageMetadataViewerTool";
+import { ImageMetadataEditorTool } from "@/components/pages/developer-tools/ImageMetadataViewerTool";
 
 export function ImageMetadataViewerPageClient() {
   return (
@@ -12,7 +12,7 @@ export function ImageMetadataViewerPageClient() {
             Back to features
           </Link>
         </div>
-        <ImageMetadataViewerTool />
+        <ImageMetadataEditorTool />
       </div>
     </div>
   );

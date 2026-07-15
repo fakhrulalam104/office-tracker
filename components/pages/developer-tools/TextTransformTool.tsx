@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, textAreaClass, copyText } from "./shared";
 
 function toCamelCase(s: string) {
@@ -87,7 +87,19 @@ const transforms: { key: TransformKey; label: string; fn: (s: string) => string 
 export function TextTransformTool() {
   const [input, setInput] = useState("hello-world example_text");
   const [active, setActive] = useState<TransformKey | null>(null);
+  const [copied, setCopied] = useState(false);
   const originalRef = useRef("hello-world example_text");
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  function handleCopy() {
+    copyText(input);
+    setCopied(true);
+  }
 
   function applyTransform(key: TransformKey, fn: (s: string) => string) {
     if (active === key) {
@@ -115,8 +127,8 @@ export function TextTransformTool() {
       <Card title="Input">
         <div className="flex items-start justify-between gap-3">
           <textarea value={input} onChange={(e) => handleManualEdit(e.target.value)} className={textAreaClass} />
-          <button type="button" onClick={() => copyText(input)} className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-            Copy
+          <button type="button" onClick={handleCopy} className={`shrink-0 rounded-full px-3 py-2 text-xs font-semibold transition ${copied ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+            {copied ? "Copied!" : "Copy"}
           </button>
         </div>
         <p className="mt-2 text-xs font-semibold text-slate-500">{wordCount(input)}</p>

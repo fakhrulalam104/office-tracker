@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { PageHeader } from "@/components/pages/PageHeader";
 
 const features = [
@@ -167,8 +168,8 @@ const features = [
   },
   {
     href: "/features/image-metadata-viewer",
-    label: "Image Metadata Viewer",
-    description: "View EXIF and other metadata embedded in image files.",
+    label: "Image Metadata Editor",
+    description: "View, edit, and delete EXIF metadata from image files.",
     status: "Available",
     icon: "image"
   },
@@ -230,6 +231,8 @@ function FeatureIcon({ name }: { name: string }) {
 }
 
 export function FeaturesPageClient() {
+  const [loading, setLoading] = useState<string | null>(null);
+
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 px-4 py-6 lg:px-8">
       <PageHeader
@@ -243,6 +246,7 @@ export function FeaturesPageClient() {
           <Link
             key={feature.href}
             href={feature.href}
+            onClick={() => setLoading(feature.href)}
             className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
           >
             <div className="flex items-start justify-between gap-4">
@@ -255,7 +259,16 @@ export function FeaturesPageClient() {
               <h2 className="text-lg font-semibold text-slate-950">{feature.label}</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
             </div>
-            <div className="mt-6 text-sm font-semibold text-sky-700 transition group-hover:text-sky-800">Open app</div>
+            <div className="mt-6 text-sm font-semibold text-sky-700 transition group-hover:text-sky-800">
+              {loading === feature.href ? (
+                <span className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
+                  Loading...
+                </span>
+              ) : (
+                "Open app"
+              )}
+            </div>
           </Link>
         ))}
       </section>
