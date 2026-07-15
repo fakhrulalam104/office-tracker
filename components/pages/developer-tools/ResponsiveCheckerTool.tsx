@@ -159,10 +159,24 @@ export function ResponsiveCheckerTool() {
   }
 
   function openInNewWindow() {
-    const w = window.open(url, "_blank", `width=${activeWidth},height=${activeHeight}`);
-    if (!w) {
-      doCopy(`${url} (${activeWidth}x${activeHeight})`, "popup-blocked");
+    const w = window.open(url, "_blank");
+    if (!w || w.closed || typeof w.closed === "undefined") {
+      doCopy(url, "blocked");
     }
+  }
+
+  function handleIframeLoad() {
+    setLoading(false);
+    setTimeout(() => {
+      try {
+        const doc = iframeRef.current?.contentDocument;
+        if (!doc || doc.body?.innerHTML === "" || doc.body?.innerHTML?.includes("Refused to connect")) {
+          setIframeError(true);
+        }
+      } catch {
+        setIframeError(true);
+      }
+    }, 500);
   }
 
   function calculateScale() {
@@ -299,13 +313,13 @@ export function ResponsiveCheckerTool() {
                   </div>
                   <div className="flex gap-2">
                     <button type="button" onClick={openInNewWindow} className={buttonClass}>
-                      Open at {activeWidth}x{activeHeight}
+                      Open in new tab
                     </button>
-                    <button type="button" onClick={() => doCopy(`${activeWidth} x ${activeHeight}`, "size")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "size" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
-                      {copiedKey === "size" ? "Copied!" : "Copy size"}
+                    <button type="button" onClick={() => doCopy(url, "error-url")} className={`rounded-full px-3 py-2 text-xs font-semibold transition ${copiedKey === "error-url" ? "bg-emerald-100 text-emerald-700" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>
+                      {copiedKey === "error-url" ? "Copied!" : "Copy URL"}
                     </button>
                   </div>
-                  <p className="text-[10px] text-amber-600">Tip: Use Chrome DevTools Device Toolbar (Ctrl+Shift+M) with the copied size for full responsive testing.</p>
+                  <p className="text-[10px] text-amber-600">Tip: Use Chrome DevTools &gt; Device Toolbar (Ctrl+Shift+M) and enter {activeWidth} x {activeHeight} for full responsive testing.</p>
                 </div>
               ) : (
                 <div className="relative rounded-xl border border-slate-300 bg-white shadow-lg overflow-hidden" style={{ width: activeWidth * calculateScale(), height: activeHeight * calculateScale() }}>
@@ -320,7 +334,7 @@ export function ResponsiveCheckerTool() {
                     title="Responsive preview"
                     className="border-0"
                     style={{ width: activeWidth, height: activeHeight, transform: `scale(${calculateScale()})`, transformOrigin: "top left" }}
-                    onLoad={() => setLoading(false)}
+                    onLoad={handleIframeLoad}
                     onError={() => { setLoading(false); setIframeError(true); }}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                   />
