@@ -186,6 +186,13 @@ const features = [
     description: "Live HTML code editor with preview, device presets, and full screen mode.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/features/color-picker",
+    label: "Color Picker",
+    description: "Developer color picker with HEX, RGB, HSL, contrast checker, and Tailwind palette.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 

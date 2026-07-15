@@ -6,7 +6,7 @@ import { buttonClass, softButtonClass } from "./shared";
 type DevicePreset = { label: string; width: number; height: number; icon: string };
 
 const presets: DevicePreset[] = [
-  { label: "Desktop", width: 100, height: 100, icon: "M3 5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm5 12h6" },
+  { label: "Desktop", width: 1400, height: 768, icon: "M3 5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm5 12h6" },
   { label: "Laptop", width: 1024, height: 768, icon: "M4 6a2 2 0 012-2h12a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm-2 9h16" },
   { label: "Tablet", width: 768, height: 1024, icon: "M7 2a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2H7zm5 17a1 1 0 100-2 1 1 0 000 2z" },
   { label: "Phone", width: 375, height: 812, icon: "M10 2a2 2 0 00-2 2v16a2 2 0 002 2h4a2 2 0 002-2V4a2 2 0 00-2-2h-4zm2 17a1 1 0 100-2 1 1 0 000 2z" },
