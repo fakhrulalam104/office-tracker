@@ -60,13 +60,14 @@ function canModify(currentUser: Awaited<ReturnType<typeof requireAppUser>>, item
   return canManageTeam(currentUser.role) || String(item.createdBy) === currentUser.id;
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireAppUser();
     const body = await request.json().catch(() => ({}));
     await connectToDatabase();
 
-    const item = await WorkspaceItem.findById(params.id);
+    const item = await WorkspaceItem.findById(id);
     if (!item) {
       return NextResponse.json({ message: "Item not found" }, { status: 404 });
     }
@@ -153,12 +154,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireAppUser();
     await connectToDatabase();
 
-    const item = await WorkspaceItem.findById(params.id);
+    const item = await WorkspaceItem.findById(id);
     if (!item) {
       return NextResponse.json({ message: "Item not found" }, { status: 404 });
     }

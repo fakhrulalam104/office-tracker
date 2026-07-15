@@ -6,13 +6,14 @@ import { ApprovalRequest } from "@/models/ApprovalRequest";
 
 export const runtime = "nodejs";
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireReviewer();
     const body = await request.json();
     await connectToDatabase();
 
-    const approval = await ApprovalRequest.findById(params.id);
+    const approval = await ApprovalRequest.findById(id);
     if (!approval) {
       return NextResponse.json({ message: "Approval not found" }, { status: 404 });
     }

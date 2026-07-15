@@ -32,15 +32,16 @@ function toEntryResponse(entry: any) {
   };
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid entry id" }, { status: 400 });
     }
 
@@ -51,7 +52,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     }
 
     await connectToDatabase();
-    const entry = await Entry.findById(params.id);
+    const entry = await Entry.findById(id);
 
     if (!entry) {
       return NextResponse.json({ message: "Entry not found" }, { status: 404 });
@@ -97,20 +98,21 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid entry id" }, { status: 400 });
     }
 
     await connectToDatabase();
-    const entry = await Entry.findById(params.id);
+    const entry = await Entry.findById(id);
 
     if (!entry) {
       return NextResponse.json({ message: "Entry not found" }, { status: 404 });

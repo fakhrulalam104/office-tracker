@@ -5,12 +5,13 @@ import { Notification } from "@/models/Notification";
 
 export const runtime = "nodejs";
 
-export async function PATCH(_request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireAppUser();
     await connectToDatabase();
 
-    const notification = await Notification.findById(params.id);
+    const notification = await Notification.findById(id);
     if (!notification) {
       return NextResponse.json({ message: "Notification not found" }, { status: 404 });
     }

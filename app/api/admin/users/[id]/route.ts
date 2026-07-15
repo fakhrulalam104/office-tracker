@@ -14,12 +14,13 @@ function normalizeDesignation(value: unknown) {
   return designation || "User";
 }
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireManager();
 
     await connectToDatabase();
-    const user = (await User.findOne({ _id: params.id }).lean()) as
+    const user = (await User.findOne({ _id: id }).lean()) as
       | {
           _id: unknown;
           name: string;
@@ -57,13 +58,14 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireManager();
     const body = await request.json();
 
     await connectToDatabase();
-    const user = await User.findById(params.id);
+    const user = await User.findById(id);
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
@@ -144,12 +146,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireManager();
 
     await connectToDatabase();
-    const user = await User.findById(params.id);
+    const user = await User.findById(id);
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }

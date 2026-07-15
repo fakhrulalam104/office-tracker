@@ -8,10 +8,11 @@ import { redirect } from "next/navigation";
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams?: { month?: string };
+  searchParams?: Promise<{ month?: string }>;
 }) {
+  const params = await searchParams;
   authDebug("dashboard.auth-start", {
-    requestedMonth: searchParams?.month ?? null
+    requestedMonth: params?.month ?? null
   });
   const user = await requireUser();
 
@@ -25,7 +26,7 @@ export default async function DashboardPage({
     redirect("/admin");
   }
 
-  const month = parseMonthKey(searchParams?.month);
+  const month = parseMonthKey(params?.month);
   const currentMonth = toMonthKey(new Date());
 
   return <DashboardClient initialMonth={month ?? currentMonth} />;

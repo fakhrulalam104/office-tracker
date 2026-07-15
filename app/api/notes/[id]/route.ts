@@ -42,18 +42,19 @@ function toNoteResponse(note: any) {
   };
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireAppUser();
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid note id" }, { status: 400 });
     }
 
     const body = await request.json().catch(() => ({}));
     await connectToDatabase();
 
-    const note = await Note.findOne({ _id: params.id, userId: currentUser.id });
+    const note = await Note.findOne({ _id: id, userId: currentUser.id });
     if (!note) {
       return NextResponse.json({ message: "Note not found" }, { status: 404 });
     }
@@ -83,16 +84,17 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireAppUser();
 
-    if (!Types.ObjectId.isValid(params.id)) {
+    if (!Types.ObjectId.isValid(id)) {
       return NextResponse.json({ message: "Invalid note id" }, { status: 400 });
     }
 
     await connectToDatabase();
-    const note = await Note.findOne({ _id: params.id, userId: currentUser.id });
+    const note = await Note.findOne({ _id: id, userId: currentUser.id });
 
     if (!note) {
       return NextResponse.json({ message: "Note not found" }, { status: 404 });

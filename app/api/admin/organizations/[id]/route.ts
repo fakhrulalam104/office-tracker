@@ -6,13 +6,14 @@ import { Organization } from "@/models/Organization";
 
 export const runtime = "nodejs";
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await requireManager();
     const body = await request.json();
 
     await connectToDatabase();
-    const organization = await Organization.findById(params.id);
+    const organization = await Organization.findById(id);
     if (!organization) {
       return NextResponse.json({ message: "Organization not found" }, { status: 404 });
     }

@@ -35,7 +35,7 @@ const features = [
   {
     href: "/features/developer-tools",
     label: "Developer Tools",
-    description: "JSON, JWT, encoders, hashes, regex, timestamps, colors, diffs, markdown, API tests, QR, and mock data.",
+    description: "35 tools: JSON, JWT, Base64, UUID, Hash, Regex, Timestamp, Color, Diff, Markdown, CSV, API, QR, Password Generator, Cron Parser, JSON Schema, Word Diff, HMAC, HTML Email, SVG, Regex Debug, Cheat Sheets, Text Transform, Pomodoro, Batch Resize, Clipboard, Color Palette, MD to Slides, JSON to TS, Lorem Ipsum, Unit Converter, Image Meta, and Regex Playbook.",
     status: "Available",
     icon: "tools"
   }
