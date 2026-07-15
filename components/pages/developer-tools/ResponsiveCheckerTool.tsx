@@ -113,6 +113,7 @@ export function ResponsiveCheckerTool() {
   const [history, setHistory] = useState<string[]>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
 
   const filteredDevices = devices.filter((d) => d.category === category);
   const isLandscapeDevice = category === "laptops" || category === "desktops";
@@ -143,6 +144,7 @@ export function ResponsiveCheckerTool() {
     setInputUrl(finalUrl);
     setHistory((prev) => [finalUrl, ...prev.filter((h) => h !== finalUrl)].slice(0, 10));
     setLoading(true);
+    setIframeError(false);
   }
 
   function calculateScale() {
@@ -260,28 +262,48 @@ export function ResponsiveCheckerTool() {
               <span className="text-xs text-slate-500">{activeWidth} x {activeHeight}</span>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => { const w = window.open(url, "_blank"); w?.resizeTo(activeWidth, activeHeight); }} className={softButtonClass}>Pop out</button>
+              <button type="button" onClick={() => { const w = window.open(url, "_blank"); if (w) { w.resizeTo(activeWidth, activeHeight); w.moveTo(0, 0); } }} className={buttonClass}>Open in new window</button>
               <button type="button" onClick={() => copyText(url)} className={softButtonClass}>Copy URL</button>
             </div>
           </div>
           <div className="flex items-center justify-center bg-slate-100 p-6 overflow-auto" style={{ minHeight: 600 }}>
             {url ? (
-              <div className="relative rounded-xl border border-slate-300 bg-white shadow-lg overflow-hidden" style={{ width: activeWidth * calculateScale(), height: activeHeight * calculateScale() }}>
-                {loading && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+              iframeError ? (
+                <div className="flex flex-col items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center max-w-md">
+                  <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </div>
-                )}
-                <iframe
-                  ref={iframeRef}
-                  src={url}
-                  title="Responsive preview"
-                  className="border-0"
-                  style={{ width: activeWidth, height: activeHeight, transform: `scale(${calculateScale()})`, transformOrigin: "top left" }}
-                  onLoad={() => setLoading(false)}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                />
-              </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800">This site blocks iframe embedding</p>
+                    <p className="mt-1 text-xs text-amber-700">The website sets security headers (X-Frame-Options) that prevent it from loading inside an iframe. This is a browser security restriction.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { const w = window.open(url, "_blank"); if (w) { w.resizeTo(activeWidth, activeHeight); w.moveTo(0, 0); } }} className={buttonClass}>
+                      Open at {activeWidth}x{activeHeight}
+                    </button>
+                    <button type="button" onClick={() => { navigator.clipboard?.writeText(`Device Toolbar > ${activeWidth} x ${activeHeight}`); }} className={softButtonClass}>Copy size</button>
+                  </div>
+                  <p className="text-[10px] text-amber-600">Tip: Use Chrome DevTools Device Toolbar (Ctrl+Shift+M) with the copied size for full responsive testing.</p>
+                </div>
+              ) : (
+                <div className="relative rounded-xl border border-slate-300 bg-white shadow-lg overflow-hidden" style={{ width: activeWidth * calculateScale(), height: activeHeight * calculateScale() }}>
+                  {loading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-sky-600" />
+                    </div>
+                  )}
+                  <iframe
+                    ref={iframeRef}
+                    src={url}
+                    title="Responsive preview"
+                    className="border-0"
+                    style={{ width: activeWidth, height: activeHeight, transform: `scale(${calculateScale()})`, transformOrigin: "top left" }}
+                    onLoad={() => setLoading(false)}
+                    onError={() => { setLoading(false); setIframeError(true); }}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  />
+                </div>
+              )
             ) : (
               <p className="text-sm text-slate-500">Enter a URL to preview</p>
             )}
