@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, textAreaClass } from "./shared";
 
 function toCamelCase(s: string) {
@@ -40,6 +40,11 @@ function toSentenceCase(s: string) {
   return s.replace(/(^\s*[a-z]|\.\s+[a-z]|!\s+[a-z]|\?\s+[a-z])/g, (c) => c.toUpperCase());
 }
 
+function toNormalText(s: string) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function unicodeEscape(s: string) {
   return Array.from(s).map((c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`).join("");
 }
@@ -59,44 +64,78 @@ function wordCount(s: string) {
   return `Words: ${words} | Characters: ${chars} | Lines: ${lines}`;
 }
 
+type TransformKey = string;
+
+const transforms: { key: TransformKey; label: string; fn: (s: string) => string }[] = [
+  { key: "camel", label: "camelCase", fn: toCamelCase },
+  { key: "pascal", label: "PascalCase", fn: toPascalCase },
+  { key: "snake", label: "snake_case", fn: toSnakeCase },
+  { key: "kebab", label: "kebab-case", fn: toKebabCase },
+  { key: "constant", label: "CONSTANT_CASE", fn: toConstantCase },
+  { key: "dot", label: "dot.case", fn: toDotCase },
+  { key: "path", label: "path/case", fn: toPathCase },
+  { key: "capitalize", label: "Capitalize", fn: toCapitalize },
+  { key: "sentence", label: "Sentence case", fn: toSentenceCase },
+  { key: "normal", label: "Normal text", fn: toNormalText },
+  { key: "upper", label: "UPPERCASE", fn: (s: string) => s.toUpperCase() },
+  { key: "lower", label: "lowercase", fn: (s: string) => s.toLowerCase() },
+  { key: "unicode", label: "Unicode Escape", fn: unicodeEscape },
+  { key: "html", label: "HTML Entities", fn: htmlEntities },
+  { key: "reverse", label: "Reverse", fn: reverseString },
+];
+
 export function TextTransformTool() {
   const [input, setInput] = useState("hello-world example_text");
+  const [active, setActive] = useState<TransformKey | null>(null);
+  const originalRef = useRef("hello-world example_text");
 
-  const transforms = [
-    { label: "camelCase", fn: toCamelCase },
-    { label: "PascalCase", fn: toPascalCase },
-    { label: "snake_case", fn: toSnakeCase },
-    { label: "kebab-case", fn: toKebabCase },
-    { label: "CONSTANT_CASE", fn: toConstantCase },
-    { label: "dot.case", fn: toDotCase },
-    { label: "path/case", fn: toPathCase },
-    { label: "Capitalize", fn: toCapitalize },
-    { label: "Sentence case", fn: toSentenceCase },
-    { label: "UPPERCASE", fn: (s: string) => s.toUpperCase() },
-    { label: "lowercase", fn: (s: string) => s.toLowerCase() },
-    { label: "Unicode Escape", fn: unicodeEscape },
-    { label: "HTML Entities", fn: htmlEntities },
-    { label: "Reverse", fn: reverseString },
-  ];
+  function applyTransform(key: TransformKey, fn: (s: string) => string) {
+    if (active === key) {
+      setInput(originalRef.current);
+      setActive(null);
+    } else {
+      if (active === null) {
+        originalRef.current = input;
+      }
+      setInput(fn(originalRef.current));
+      setActive(key);
+    }
+  }
+
+  function handleManualEdit(value: string) {
+    setInput(value);
+    if (active) {
+      originalRef.current = value;
+      setActive(null);
+    }
+  }
 
   return (
     <div className="space-y-4">
       <Card title="Input">
-        <textarea value={input} onChange={(e) => setInput(e.target.value)} className={textAreaClass} />
+        <textarea value={input} onChange={(e) => handleManualEdit(e.target.value)} className={textAreaClass} />
         <p className="mt-2 text-xs font-semibold text-slate-500">{wordCount(input)}</p>
       </Card>
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {transforms.map((t) => (
-          <button
-            key={t.label}
-            type="button"
-            onClick={() => setInput(t.fn(input))}
-            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-sky-200 hover:bg-sky-50"
-          >
-            <span className="block text-sm font-semibold text-slate-950">{t.label}</span>
-            <span className="mt-1 block truncate font-mono text-xs text-slate-500">{t.fn(input).slice(0, 40)}</span>
-          </button>
-        ))}
+        {transforms.map((t) => {
+          const isActive = active === t.key;
+          const preview = t.fn(originalRef.current).slice(0, 40);
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => applyTransform(t.key, t.fn)}
+              className={`rounded-2xl border px-4 py-3 text-left transition ${
+                isActive
+                  ? "border-slate-950 bg-slate-950 text-white shadow-sm"
+                  : "border-slate-200 bg-white hover:border-sky-200 hover:bg-sky-50"
+              }`}
+            >
+              <span className={`block text-sm font-semibold ${isActive ? "text-white" : "text-slate-950"}`}>{t.label}</span>
+              <span className={`mt-1 block truncate font-mono text-xs ${isActive ? "text-slate-300" : "text-slate-500"}`}>{preview}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
