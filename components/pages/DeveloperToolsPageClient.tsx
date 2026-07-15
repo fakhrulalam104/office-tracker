@@ -2,28 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-  PasswordGeneratorTool,
-  CronParserTool,
-  JsonSchemaValidatorTool,
-  WordDiffTool,
-  HmacSigningTool,
-  HtmlEmailPreviewTool,
-  SvgViewerTool,
-  RegexDebuggerTool,
-  CheatSheetTool,
-  TextTransformTool,
-  PomodoroTimerTool,
-  BatchImageResizerTool,
-  ClipboardHistoryTool,
-  ColorPaletteGeneratorTool,
-  MarkdownToSlidesTool,
-  JsonToTypescriptTool,
-  LoremIpsumGeneratorTool,
-  UnitConverterTool,
-  ImageMetadataViewerTool,
-  RegexPlaybookTool,
-} from "./developer-tools";
 
 type ToolKey =
   | "json"
@@ -40,27 +18,7 @@ type ToolKey =
   | "csv"
   | "api"
   | "dummy"
-  | "qr"
-  | "password"
-  | "cron"
-  | "schema"
-  | "worddiff"
-  | "hmac"
-  | "htmlemail"
-  | "svg"
-  | "regexdebug"
-  | "cheatsheet"
-  | "texttransform"
-  | "pomodoro"
-  | "batchresize"
-  | "clipboard"
-  | "palette"
-  | "slides"
-  | "json2ts"
-  | "lorem"
-  | "units"
-  | "imagemeta"
-  | "regexplaybook";
+  | "qr";
 
 const tools: { key: ToolKey; label: string; hint: string }[] = [
   { key: "json", label: "JSON", hint: "Format, minify, validate" },
@@ -78,26 +36,6 @@ const tools: { key: ToolKey; label: string; hint: string }[] = [
   { key: "api", label: "API", hint: "Light request builder" },
   { key: "dummy", label: "Dummy Data", hint: "Mock users and text" },
   { key: "qr", label: "QR Code", hint: "Generate link codes" },
-  { key: "password", label: "Password Gen", hint: "Strength-rated passwords" },
-  { key: "cron", label: "Cron Parser", hint: "Cron to human-readable" },
-  { key: "schema", label: "JSON Schema", hint: "Validate JSON against schema" },
-  { key: "worddiff", label: "Word Diff", hint: "Word-level text comparison" },
-  { key: "hmac", label: "HMAC Sign", hint: "HMAC-SHA signature tool" },
-  { key: "htmlemail", label: "HTML Email", hint: "Preview email templates" },
-  { key: "svg", label: "SVG Viewer", hint: "Preview, minify, export PNG" },
-  { key: "regexdebug", label: "Regex Debug", hint: "Step-by-step regex" },
-  { key: "cheatsheet", label: "Cheat Sheets", hint: "HTTP, CSS, SQL, Linux, Git" },
-  { key: "texttransform", label: "Text Transform", hint: "Case, unicode, HTML entities" },
-  { key: "pomodoro", label: "Pomodoro", hint: "25/5 focus timer" },
-  { key: "batchresize", label: "Batch Resize", hint: "Resize multiple images" },
-  { key: "clipboard", label: "Clipboard", hint: "Clipboard history manager" },
-  { key: "palette", label: "Color Palette", hint: "Harmony & palette generator" },
-  { key: "slides", label: "MD to Slides", hint: "Markdown to presentation" },
-  { key: "json2ts", label: "JSON to TS", hint: "TypeScript & Zod schemas" },
-  { key: "lorem", label: "Lorem Ipsum", hint: "Placeholder text generator" },
-  { key: "units", label: "Unit Convert", hint: "Length, weight, data, time" },
-  { key: "imagemeta", label: "Image Meta", hint: "EXIF & image metadata" },
-  { key: "regexplaybook", label: "Regex Playbook", hint: "Pattern library & tester" },
 ];
 
 const textAreaClass =
@@ -1060,27 +998,6 @@ export function DeveloperToolsPageClient() {
         </div>
       );
     }
-
-    if (activeTool === "password") return <PasswordGeneratorTool />;
-    if (activeTool === "cron") return <CronParserTool />;
-    if (activeTool === "schema") return <JsonSchemaValidatorTool />;
-    if (activeTool === "worddiff") return <WordDiffTool />;
-    if (activeTool === "hmac") return <HmacSigningTool />;
-    if (activeTool === "htmlemail") return <HtmlEmailPreviewTool />;
-    if (activeTool === "svg") return <SvgViewerTool />;
-    if (activeTool === "regexdebug") return <RegexDebuggerTool />;
-    if (activeTool === "cheatsheet") return <CheatSheetTool />;
-    if (activeTool === "texttransform") return <TextTransformTool />;
-    if (activeTool === "pomodoro") return <PomodoroTimerTool />;
-    if (activeTool === "batchresize") return <BatchImageResizerTool />;
-    if (activeTool === "clipboard") return <ClipboardHistoryTool />;
-    if (activeTool === "palette") return <ColorPaletteGeneratorTool />;
-    if (activeTool === "slides") return <MarkdownToSlidesTool />;
-    if (activeTool === "json2ts") return <JsonToTypescriptTool />;
-    if (activeTool === "lorem") return <LoremIpsumGeneratorTool />;
-    if (activeTool === "units") return <UnitConverterTool />;
-    if (activeTool === "imagemeta") return <ImageMetadataViewerTool />;
-    if (activeTool === "regexplaybook") return <RegexPlaybookTool />;
 
     return (
       <div className="grid gap-4 lg:grid-cols-[360px_1fr]">

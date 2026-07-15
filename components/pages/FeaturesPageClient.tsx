@@ -35,7 +35,147 @@ const features = [
   {
     href: "/features/developer-tools",
     label: "Developer Tools",
-    description: "35 tools: JSON, JWT, Base64, UUID, Hash, Regex, Timestamp, Color, Diff, Markdown, CSV, API, QR, Password Generator, Cron Parser, JSON Schema, Word Diff, HMAC, HTML Email, SVG, Regex Debug, Cheat Sheets, Text Transform, Pomodoro, Batch Resize, Clipboard, Color Palette, MD to Slides, JSON to TS, Lorem Ipsum, Unit Converter, Image Meta, and Regex Playbook.",
+    description: "15 tools: JSON, JWT, Base64, UUID, Hash, Regex, Timestamp, Color, Diff, Markdown, CSV, API, Dummy Data, and QR Code.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/password-generator",
+    label: "Password Generator",
+    description: "Generate strength-rated passwords with customizable options.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/cron-parser",
+    label: "Cron Parser",
+    description: "Convert cron expressions to human-readable schedules.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/json-schema-validator",
+    label: "JSON Schema Validator",
+    description: "Validate JSON data against a JSON Schema definition.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/word-diff",
+    label: "Word Diff",
+    description: "Compare text with word-level diff highlighting.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/hmac-signing",
+    label: "HMAC Signing",
+    description: "Create and verify HMAC-SHA signatures for data integrity.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/html-email-preview",
+    label: "HTML Email Preview",
+    description: "Preview HTML email templates with live rendering.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/svg-viewer",
+    label: "SVG Viewer",
+    description: "Preview, minify, and export SVG images as PNG.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/regex-debugger",
+    label: "Regex Debugger",
+    description: "Step through regex patterns with detailed match analysis.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/cheat-sheets",
+    label: "Cheat Sheets",
+    description: "Quick reference for HTTP, CSS, SQL, Linux, and Git commands.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/text-transform",
+    label: "Text Transform",
+    description: "Transform text case, convert unicode, and handle HTML entities.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/pomodoro-timer",
+    label: "Pomodoro Timer",
+    description: "25/5 minute focus timer for productive work sessions.",
+    status: "Available",
+    icon: "timer"
+  },
+  {
+    href: "/features/batch-image-resizer",
+    label: "Batch Image Resizer",
+    description: "Resize multiple images at once with batch processing.",
+    status: "Available",
+    icon: "image"
+  },
+  {
+    href: "/features/clipboard-history",
+    label: "Clipboard History",
+    description: "Manager for tracking and reusing clipboard content.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/color-palette-generator",
+    label: "Color Palette Generator",
+    description: "Generate harmonious color palettes for design projects.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/markdown-to-slides",
+    label: "Markdown to Slides",
+    description: "Convert Markdown content into presentation slides.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/json-to-typescript",
+    label: "JSON to TypeScript",
+    description: "Generate TypeScript interfaces and Zod schemas from JSON.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/lorem-ipsum-generator",
+    label: "Lorem Ipsum Generator",
+    description: "Generate placeholder text for design and development.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/unit-converter",
+    label: "Unit Converter",
+    description: "Convert between length, weight, data, and time units.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/image-metadata-viewer",
+    label: "Image Metadata Viewer",
+    description: "View EXIF and other metadata embedded in image files.",
+    status: "Available",
+    icon: "image"
+  },
+  {
+    href: "/features/regex-playbook",
+    label: "Regex Playbook",
+    description: "Pattern library and tester for regular expressions.",
     status: "Available",
     icon: "tools"
   }
