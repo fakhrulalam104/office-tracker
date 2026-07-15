@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Card, textAreaClass } from "./shared";
+import { Card, textAreaClass, copyText } from "./shared";
 
 function toCamelCase(s: string) {
   return s.replace(/[-_\s]+(.)/g, (_, c) => c.toUpperCase()).replace(/^(.)/, (_, c) => c.toLowerCase());
@@ -113,7 +113,12 @@ export function TextTransformTool() {
   return (
     <div className="space-y-4">
       <Card title="Input">
-        <textarea value={input} onChange={(e) => handleManualEdit(e.target.value)} className={textAreaClass} />
+        <div className="flex items-start justify-between gap-3">
+          <textarea value={input} onChange={(e) => handleManualEdit(e.target.value)} className={textAreaClass} />
+          <button type="button" onClick={() => copyText(input)} className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
+            Copy
+          </button>
+        </div>
         <p className="mt-2 text-xs font-semibold text-slate-500">{wordCount(input)}</p>
       </Card>
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
