@@ -179,6 +179,13 @@ const features = [
     description: "Pattern library and tester for regular expressions.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/features/html-editor",
+    label: "HTML Editor",
+    description: "Live HTML code editor with preview, device presets, and full screen mode.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
