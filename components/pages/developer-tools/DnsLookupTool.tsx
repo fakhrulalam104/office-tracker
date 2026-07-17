@@ -43,7 +43,7 @@ export function DnsLookupTool() {
         return;
       }
       
-      setResults(data.Answer.map((r: DnsResult) => ({
+      setResults(data.Answer.map((r: { type: number; name: string; TTL: number; data: string }) => ({
         type: RECORD_TYPES[r.type - 1] || `Type ${r.type}`,
         name: r.name,
         ttl: r.TTL,

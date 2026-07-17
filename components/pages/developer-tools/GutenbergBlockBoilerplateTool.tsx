@@ -223,7 +223,7 @@ export function GutenbergBlockBoilerplateTool() {
 
       <Card title="Generated Files">
         <div className="flex flex-wrap gap-2 mb-4">
-          {(Object.keys(files) as Array<keyof typeof files>).map((file) => (
+          {(["block.json", "edit.js", "save.js", "index.js", "style.scss"] as const).map((file) => (
             <button
               key={file}
               type="button"
