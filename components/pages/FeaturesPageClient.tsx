@@ -326,6 +326,83 @@ const features = [
     description: "One-click WP-flavored gitignore with presets for uploads, cache, config, and common plugins.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/features/php-memory-limit-increaser",
+    label: "PHP Memory Limit Increaser",
+    description: "Generate wp-config, .htaccess, and php.ini snippets to bump memory_limit with host-specific notes.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/max-upload-size-fixer",
+    label: "Max Upload Size Fixer",
+    description: "Fix upload_max_filesize, post_max_size, and memory_limit together across multiple methods.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/php-execution-time-fixer",
+    label: "PHP Execution Time Fixer",
+    description: "Fix max_execution_time, max_input_time, and server-level timeouts for large operations.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/white-screen-checklist",
+    label: "WP White Screen of Death Checklist",
+    description: "Interactive diagnostic tree with fix snippets for memory, plugin conflicts, PHP version, and more.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-config-fixes",
+    label: "Common wp-config.php Fixes",
+    description: "Copy-paste blocks for memory, file editing, SSL, auto-updates, revisions, and redirect fixes.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/php-version-checker",
+    label: "PHP Version Compatibility Checker",
+    description: "Paste code to flag deprecated functions that break on PHP 8+ before hosting upgrades.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/db-repair-optimizer",
+    label: "Database Repair / Optimize Generator",
+    description: "Generate WP_ALLOW_REPAIR constant and OPTIMIZE TABLE SQL for all wp_* tables.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-error-lookup",
+    label: "Common WP Error Message Lookup",
+    description: "Searchable list of error strings mapped to their standard fixes.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/nginx-config-generator",
+    label: "Nginx Config Snippet Generator",
+    description: "WP-flavored Nginx config with rewrites, caching, fastcgi_pass, and security rules.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-cron-debugger",
+    label: "WP-Cron Debugger",
+    description: "Check if wp-cron.php fires correctly and generate real system crontab replacement.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/file-permission-fixer",
+    label: "File Permission Reference / Fixer",
+    description: "Standard WP permission chart with chmod/chown commands for SSH paste.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
