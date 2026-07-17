@@ -200,6 +200,132 @@ const features = [
     description: "Test any website across 50+ real devices — phones, tablets, laptops, and desktops.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/features/wp-salts-generator",
+    label: "WP Salts/Keys Generator",
+    description: "Generate the 8 unique security keys for wp-config.php with a regenerate + copy as PHP define block button.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/serialized-php-replace",
+    label: "Serialized PHP Search & Replace",
+    description: "Safely replace text in WordPress serialized strings without breaking byte-length prefixes.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/htaccess-generator",
+    label: ".htaccess Generator/Tester",
+    description: "Toggle common Apache rewrite blocks: HTTPS, redirects, XML-RPC, caching, and test against sample URLs.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-config-generator",
+    label: "wp-config.php Generator",
+    description: "Generate a complete wp-config.php with DB settings, debug constants, memory limits, and auto-generated salts.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/gutenberg-block-boilerplate",
+    label: "Gutenberg Block Boilerplate Generator",
+    description: "Generate block.json, edit.js, save.js, index.js, and style.scss scaffolding for custom WordPress blocks.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/shortcode-tester",
+    label: "Shortcode Tester",
+    description: "Test shortcode attribute parsing and rendering logic before deploying to a live theme.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-rest-api-explorer",
+    label: "WP REST API Explorer",
+    description: "Browse and test WordPress REST API endpoints with JSON response viewing and parameter inspection.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/plugin-theme-header-generator",
+    label: "Plugin/Theme Header Generator",
+    description: "Generate the exact docblock WordPress parses for plugin and theme headers with all required fields.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/child-theme-generator",
+    label: "Child Theme Generator",
+    description: "Generate style.css with correct Template header and functions.php with proper stylesheet loading.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/acf-json-viewer",
+    label: "ACF JSON Field Group Viewer",
+    description: "Paste ACF field group JSON and get a collapsible tree view of field names, types, keys, and conditional logic.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/robots-txt-generator",
+    label: "Robots.txt Generator/Tester",
+    description: "Toggle common WP disallow rules, add sitemap, and test URL paths against the ruleset.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/meta-tag-preview",
+    label: "Meta Tag / Open Graph Preview",
+    description: "Preview how your pages will render on Facebook, Twitter/X, LinkedIn, and Slack with live cards.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/dns-lookup",
+    label: "DNS Lookup Tool",
+    description: "Query A, AAAA, CNAME, MX, TXT, NS records for any domain to verify DNS configuration.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/ssl-certificate-checker",
+    label: "SSL Certificate Checker",
+    description: "Check cert issuer, expiry date, chain validity, and SANs covered for any domain.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/favicon-generator",
+    label: "Favicon Generator",
+    description: "Upload one image and get the full modern favicon set with all required sizes and webmanifest.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/css-specificity-calculator",
+    label: "CSS Specificity Calculator",
+    description: "Paste a selector and get its specificity score with explanation of why one rule beats another.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/curl-command-builder",
+    label: "cURL Command Builder",
+    description: "Build curl commands from form inputs or parse existing commands into readable request breakdowns.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/features/wp-gitignore-generator",
+    label: ".gitignore Generator (WP-aware)",
+    description: "One-click WP-flavored gitignore with presets for uploads, cache, config, and common plugins.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
