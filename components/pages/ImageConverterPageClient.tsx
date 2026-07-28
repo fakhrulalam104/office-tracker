@@ -466,53 +466,8 @@ export function ImageConverterPageClient() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              {isBulk ? (
-                <>
-                  <div className="mb-3">
-                    <h2 className="text-sm font-semibold text-slate-900">
-                      {convertedResults.length > 0 ? "Converted Files" : "Output Preview"}
-                    </h2>
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      {convertedResults.length > 0
-                        ? `All ${convertedResults.length} images converted to ${format.label}.`
-                        : `${files.length} images will be converted to ${format.label}.`}
-                    </p>
-                  </div>
-
-                  {convertedResults.length > 0 ? (
-                    <div className="max-h-96 space-y-2 overflow-y-auto">
-                      {convertedResults.map((result, i) => (
-                        <div key={i} className="flex items-center justify-between rounded-2xl bg-white p-3 shadow-sm">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-slate-900">{result.fileName}</p>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {files[i]?.name} &middot; {result.size > 0 ? formatBytes(result.size) : "Error"}
-                            </p>
-                          </div>
-                          {result.url ? (
-                            <a
-                              href={result.url}
-                              download={result.fileName}
-                              className="ml-3 shrink-0 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
-                            >
-                              Download
-                            </a>
-                          ) : (
-                            <span className="ml-3 shrink-0 rounded-xl bg-red-100 px-4 py-2 text-xs font-semibold text-red-600">Failed</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-white shadow-inner">
-                      <span className="text-sm font-medium text-slate-400">
-                        {converting ? "Converting..." : "Click bulk convert to start"}
-                      </span>
-                    </div>
-                  )}
-                </>
-              ) : (
+            {!isBulk ? (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
                 <>
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -586,8 +541,8 @@ export function ImageConverterPageClient() {
                     </a>
                   ) : null}
                 </>
-              )}
-            </div>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>
