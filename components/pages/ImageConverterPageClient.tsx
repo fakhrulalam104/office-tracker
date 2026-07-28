@@ -24,6 +24,8 @@ const outputFormats: OutputFormat[] = [
   { label: "AVIF", mimeType: "image/avif", extension: "avif", supportsQuality: true }
 ];
 
+const MAX_CANVAS_DIMENSION = 4096;
+
 function formatBytes(value: number) {
   if (!Number.isFinite(value) || value <= 0) {
     return "0 B";
@@ -45,15 +47,27 @@ function getBaseName(fileName: string) {
   return fileName.replace(/\.[^.]+$/, "") || "converted-image";
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality: number) {
+function checkFormatSupport(mimeType: string): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const dataUrl = canvas.toDataURL(mimeType);
+    return dataUrl.startsWith(`data:${mimeType}`);
+  } catch {
+    return false;
+  }
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality: number): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
-        if (!blob) {
-          reject(new Error("This output format is not supported by your browser."));
+        if (!blob || blob.size === 0) {
+          reject(new Error(`The output format (${mimeType}) is not supported by your browser.`));
           return;
         }
-
         resolve(blob);
       },
       mimeType,
@@ -70,16 +84,130 @@ async function fileToImage(file: File) {
     image.decoding = "async";
     image.src = url;
     await image.decode();
+
+    let width = image.naturalWidth || image.width || 800;
+    let height = image.naturalHeight || image.height || 600;
+
     return {
       image,
-      width: image.naturalWidth,
-      height: image.naturalHeight,
+      width,
+      height,
       revoke: () => URL.revokeObjectURL(url)
     };
   } catch (error) {
     URL.revokeObjectURL(url);
-    throw error;
+    throw new Error(`Failed to decode image file: "${file.name}". Format may be unsupported by your browser.`);
   }
+}
+
+function revokeResults(results: ConvertedResult[]) {
+  for (const item of results) {
+    if (item.url) {
+      URL.revokeObjectURL(item.url);
+    }
+  }
+}
+
+// Pure JS Store-compression ZIP creation (0 dependencies)
+async function createZipBlob(files: { name: string; blob: Blob }[]): Promise<Blob> {
+  const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[n] = c;
+    }
+    return table;
+  })();
+
+  const getCrc32 = (buf: Uint8Array) => {
+    let crc = 0xffffffff;
+    for (let i = 0; i < buf.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ buf[i]) & 0xff];
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  };
+
+  const textEncoder = new TextEncoder();
+  const parts: Uint8Array[] = [];
+  const fileEntries: { nameBytes: Uint8Array; dataBytes: Uint8Array; crc32: number; offset: number }[] = [];
+  let currentOffset = 0;
+
+  for (const file of files) {
+    const nameBytes = textEncoder.encode(file.name);
+    const arrayBuf = await file.blob.arrayBuffer();
+    const dataBytes = new Uint8Array(arrayBuf);
+    const crc32 = getCrc32(dataBytes);
+
+    const header = new Uint8Array(30 + nameBytes.length);
+    const view = new DataView(header.buffer);
+
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 0, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, 0, true);
+    view.setUint16(12, 0, true);
+    view.setUint32(14, crc32, true);
+    view.setUint32(18, dataBytes.length, true);
+    view.setUint32(22, dataBytes.length, true);
+    view.setUint16(26, nameBytes.length, true);
+    view.setUint16(28, 0, true);
+    header.set(nameBytes, 30);
+
+    fileEntries.push({ nameBytes, dataBytes, crc32, offset: currentOffset });
+
+    parts.push(header);
+    parts.push(dataBytes);
+    currentOffset += header.length + dataBytes.length;
+  }
+
+  const cdStart = currentOffset;
+  let cdSize = 0;
+
+  for (const entry of fileEntries) {
+    const cdHeader = new Uint8Array(46 + entry.nameBytes.length);
+    const view = new DataView(cdHeader.buffer);
+
+    view.setUint32(0, 0x02014b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 20, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, 0, true);
+    view.setUint16(12, 0, true);
+    view.setUint16(14, 0, true);
+    view.setUint32(16, entry.crc32, true);
+    view.setUint32(20, entry.dataBytes.length, true);
+    view.setUint32(24, entry.dataBytes.length, true);
+    view.setUint16(28, entry.nameBytes.length, true);
+    view.setUint16(30, 0, true);
+    view.setUint16(32, 0, true);
+    view.setUint16(34, 0, true);
+    view.setUint16(36, 0, true);
+    view.setUint32(38, 0, true);
+    view.setUint32(42, entry.offset, true);
+    cdHeader.set(entry.nameBytes, 46);
+
+    parts.push(cdHeader);
+    cdSize += cdHeader.length;
+  }
+
+  const eocd = new Uint8Array(22);
+  const view = new DataView(eocd.buffer);
+  view.setUint32(0, 0x06054b50, true);
+  view.setUint16(4, 0, true);
+  view.setUint16(6, 0, true);
+  view.setUint16(8, fileEntries.length, true);
+  view.setUint16(10, fileEntries.length, true);
+  view.setUint32(12, cdSize, true);
+  view.setUint32(16, cdStart, true);
+  view.setUint16(20, 0, true);
+
+  parts.push(eocd);
+
+  return new Blob(parts as BlobPart[], { type: "application/zip" });
 }
 
 export function ImageConverterPageClient() {
@@ -95,12 +223,22 @@ export function ImageConverterPageClient() {
   const [comparePosition, setComparePosition] = useState(50);
   const [estimating, setEstimating] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [zipping, setZipping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [convertedResults, setConvertedResults] = useState<ConvertedResult[]>([]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const compareRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const estimateReqIdRef = useRef<number>(0);
+  const convertedResultsRef = useRef<ConvertedResult[]>([]);
+
+  // Keep ref synchronized with state to cleanly revoke Object URLs
+  useEffect(() => {
+    convertedResultsRef.current = convertedResults;
+  }, [convertedResults]);
 
   const isBulk = files.length > 1;
   const currentFile = files.length === 1 ? files[0] : null;
@@ -109,153 +247,207 @@ export function ImageConverterPageClient() {
     if (!currentFile) {
       return `converted.${format.extension}`;
     }
-
     return `${getBaseName(currentFile.name)}.${format.extension}`;
   }, [currentFile, format.extension]);
 
+  // Clean up object URLs on component unmount
   useEffect(() => {
     return () => {
-      if (originalUrl) {
-        URL.revokeObjectURL(originalUrl);
-      }
-      if (convertedUrl) {
-        URL.revokeObjectURL(convertedUrl);
-      }
+      if (originalUrl) URL.revokeObjectURL(originalUrl);
+      if (convertedUrl) URL.revokeObjectURL(convertedUrl);
+      revokeResults(convertedResultsRef.current);
     };
   }, [originalUrl, convertedUrl]);
 
-  async function drawFileToCanvas(nextFile: File) {
+  const drawFileToCanvas = useCallback(async (nextFile: File, targetMime: string) => {
     const loaded = await fileToImage(nextFile);
-    const canvas = canvasRef.current ?? document.createElement("canvas");
-    canvasRef.current = canvas;
-    canvas.width = loaded.width;
-    canvas.height = loaded.height;
+
+    // Calculate dimensions, capping max width/height to avoid canvas OOM crashes
+    let drawWidth = loaded.width;
+    let drawHeight = loaded.height;
+
+    if (drawWidth > MAX_CANVAS_DIMENSION || drawHeight > MAX_CANVAS_DIMENSION) {
+      if (drawWidth >= drawHeight) {
+        drawHeight = Math.round((drawHeight * MAX_CANVAS_DIMENSION) / drawWidth);
+        drawWidth = MAX_CANVAS_DIMENSION;
+      } else {
+        drawWidth = Math.round((drawWidth * MAX_CANVAS_DIMENSION) / drawHeight);
+        drawHeight = MAX_CANVAS_DIMENSION;
+      }
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = drawWidth;
+    canvas.height = drawHeight;
 
     const context = canvas.getContext("2d");
     if (!context) {
       loaded.revoke();
-      throw new Error("Canvas is not available in this browser.");
+      throw new Error("Canvas 2D context is not available in your browser.");
     }
 
-    context.clearRect(0, 0, loaded.width, loaded.height);
-    context.drawImage(loaded.image, 0, 0);
-    setDimensions({ width: loaded.width, height: loaded.height });
+    // Fill background with solid white for non-alpha formats (JPEG) to prevent black background
+    if (targetMime === "image/jpeg") {
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, drawWidth, drawHeight);
+    } else {
+      context.clearRect(0, 0, drawWidth, drawHeight);
+    }
+
+    context.drawImage(loaded.image, 0, 0, drawWidth, drawHeight);
     loaded.revoke();
-    return canvas;
-  }
 
-  async function estimate(nextFile: File | null, nextFormat = format, nextQuality = quality) {
-    if (!nextFile) {
-      setEstimatedSize(null);
-      return;
-    }
+    return { canvas, width: drawWidth, height: drawHeight };
+  }, []);
 
-    setEstimating(true);
+  const processSingleConversion = useCallback(
+    async (file: File, targetFormat = format, targetQuality = quality, isEstimateOnly = false) => {
+      const reqId = ++estimateReqIdRef.current;
+      if (isEstimateOnly) setEstimating(true);
+      else setConverting(true);
 
-    try {
-      const canvas = await drawFileToCanvas(nextFile);
-      const blob = await canvasToBlob(canvas, nextFormat.mimeType, nextQuality / 100);
-      setEstimatedSize(blob.size);
-    } catch (estimateError) {
-      setEstimatedSize(null);
-    } finally {
-      setEstimating(false);
-    }
-  }
+      try {
+        const { canvas, width, height } = await drawFileToCanvas(file, targetFormat.mimeType);
+        if (reqId !== estimateReqIdRef.current) return;
 
-  function handleFiles(newFiles: FileList | File[]) {
-    const imageFiles = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
+        setDimensions({ width, height });
 
-    if (imageFiles.length === 0) {
-      setError("No valid image files found.");
-      return;
-    }
+        const blob = await canvasToBlob(canvas, targetFormat.mimeType, targetQuality / 100);
+        if (reqId !== estimateReqIdRef.current) return;
 
-    setError(null);
-    setConvertedResults([]);
-    setConvertedBlob(null);
-    setEstimatedSize(null);
+        setEstimatedSize(blob.size);
 
-    if (convertedUrl) {
-      URL.revokeObjectURL(convertedUrl);
-      setConvertedUrl(null);
-    }
-    if (originalUrl) {
-      URL.revokeObjectURL(originalUrl);
-      setOriginalUrl(null);
-    }
+        // Always update preview and blob so compare slider & download work live
+        const nextUrl = URL.createObjectURL(blob);
+        setConvertedUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return nextUrl;
+        });
+        setConvertedBlob(blob);
+        setError(null);
+      } catch (err) {
+        if (reqId === estimateReqIdRef.current) {
+          setEstimatedSize(null);
+          if (!isEstimateOnly) {
+            setError(err instanceof Error ? err.message : "Could not convert image.");
+          }
+        }
+      } finally {
+        if (reqId === estimateReqIdRef.current) {
+          setEstimating(false);
+          setConverting(false);
+        }
+      }
+    },
+    [drawFileToCanvas, format, quality]
+  );
 
-    setFiles(imageFiles);
+  const handleFiles = useCallback(
+    (newFiles: FileList | File[]) => {
+      const rawList = Array.from(newFiles);
+      const imageFiles = rawList.filter((f) => f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp|avif|svg)$/i.test(f.name));
+      const skipped = rawList.length - imageFiles.length;
 
-    if (imageFiles.length === 1) {
-      const file = imageFiles[0];
-      const url = URL.createObjectURL(file);
-      setOriginalUrl(url);
-      void estimate(file);
-    }
-  }
-
-  async function handleSingleConvert() {
-    if (!currentFile) return;
-
-    setConverting(true);
-    setError(null);
-
-    try {
-      const canvas = await drawFileToCanvas(currentFile);
-      const blob = await canvasToBlob(canvas, format.mimeType, quality / 100);
-      const nextUrl = URL.createObjectURL(blob);
-
-      if (convertedUrl) {
-        URL.revokeObjectURL(convertedUrl);
+      if (imageFiles.length === 0) {
+        setError("No valid image files found. Please select standard image files.");
+        setWarning(null);
+        return;
       }
 
-      setConvertedBlob(blob);
-      setConvertedUrl(nextUrl);
-      setEstimatedSize(blob.size);
-    } catch (convertError) {
-      setError(convertError instanceof Error ? convertError.message : "Could not convert image.");
-    } finally {
-      setConverting(false);
-    }
-  }
+      setError(null);
+      setWarning(skipped > 0 ? `Notice: ${skipped} non-image file${skipped > 1 ? "s were" : " was"} skipped.` : null);
 
-  async function handleBulkConvert() {
+      revokeResults(convertedResultsRef.current);
+      setConvertedResults([]);
+
+      setConvertedUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setOriginalUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+
+      setFiles(imageFiles);
+
+      if (imageFiles.length === 1) {
+        const singleFile = imageFiles[0];
+        const origUrl = URL.createObjectURL(singleFile);
+        setOriginalUrl(origUrl);
+        void processSingleConversion(singleFile, format, quality, false);
+      }
+    },
+    [format, quality, processSingleConversion]
+  );
+
+  const handleFormatChange = (nextFormat: OutputFormat) => {
+    if (!checkFormatSupport(nextFormat.mimeType)) {
+      setError(`Your browser does not support exporting to ${nextFormat.label}.`);
+      return;
+    }
+
+    setFormat(nextFormat);
+    setError(null);
+
+    revokeResults(convertedResultsRef.current);
+    setConvertedResults([]);
+
+    if (currentFile) {
+      void processSingleConversion(currentFile, nextFormat, quality, false);
+    }
+  };
+
+  const handleQualityChange = (nextQuality: number) => {
+    setQuality(nextQuality);
+
+    revokeResults(convertedResultsRef.current);
+    setConvertedResults([]);
+
+    if (currentFile) {
+      void processSingleConversion(currentFile, format, nextQuality, false);
+    }
+  };
+
+  const handleBulkConvert = async () => {
     if (files.length === 0) return;
 
     setConverting(true);
     setError(null);
+
+    revokeResults(convertedResultsRef.current);
     setConvertedResults([]);
 
     const results: ConvertedResult[] = [];
+    const usedNames = new Set<string>();
 
     for (const file of files) {
-      try {
-        const loaded = await fileToImage(file);
-        const canvas = canvasRef.current ?? document.createElement("canvas");
-        canvasRef.current = canvas;
-        canvas.width = loaded.width;
-        canvas.height = loaded.height;
-        const context = canvas.getContext("2d");
-        if (context) {
-          context.clearRect(0, 0, loaded.width, loaded.height);
-          context.drawImage(loaded.image, 0, 0);
-        }
-        loaded.revoke();
+      let baseName = getBaseName(file.name);
+      let targetName = `${baseName}.${format.extension}`;
+      let counter = 1;
 
+      while (usedNames.has(targetName)) {
+        targetName = `${baseName} (${counter}).${format.extension}`;
+        counter++;
+      }
+      usedNames.add(targetName);
+
+      try {
+        const { canvas } = await drawFileToCanvas(file, format.mimeType);
         const blob = await canvasToBlob(canvas, format.mimeType, quality / 100);
         const url = URL.createObjectURL(blob);
+
         results.push({
           blob,
           url,
-          fileName: `${getBaseName(file.name)}.${format.extension}`,
+          fileName: targetName,
           size: blob.size
         });
       } catch {
         results.push({
           blob: new Blob(),
           url: "",
-          fileName: `${getBaseName(file.name)}.${format.extension}`,
+          fileName: targetName,
           size: 0
         });
       }
@@ -263,17 +455,36 @@ export function ImageConverterPageClient() {
 
     setConvertedResults(results);
     setConverting(false);
-  }
+  };
 
-  function updateComparePosition(clientX: number) {
-    const bounds = compareRef.current?.getBoundingClientRect();
-    if (!bounds || bounds.width <= 0) {
-      return;
+  const handleDownloadAllZip = async () => {
+    const validFiles = convertedResults.filter((r) => r.url && r.blob.size > 0);
+    if (validFiles.length === 0) return;
+
+    setZipping(true);
+    try {
+      const zipBlob = await createZipBlob(validFiles.map((f) => ({ name: f.fileName, blob: f.blob })));
+      const zipUrl = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = zipUrl;
+      link.download = `converted-images-${format.extension}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(zipUrl), 10000);
+    } catch {
+      setError("Failed to package ZIP file.");
+    } finally {
+      setZipping(false);
     }
+  };
 
+  const updateComparePosition = (clientX: number) => {
+    const bounds = compareRef.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0) return;
     const nextPosition = ((clientX - bounds.left) / bounds.width) * 100;
     setComparePosition(Math.max(0, Math.min(100, nextPosition)));
-  }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -287,24 +498,39 @@ export function ImageConverterPageClient() {
     setDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragOver(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragOver(false);
 
-    if (e.dataTransfer.files.length > 0) {
-      handleFiles(e.dataTransfer.files);
-    }
-  }, []);
+      if (e.dataTransfer.files.length > 0) {
+        handleFiles(e.dataTransfer.files);
+      }
+    },
+    [handleFiles]
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href="/features" onClick={() => setBackLoading(true)} className="text-sm font-semibold text-slate-600 transition hover:text-sky-700">
-            {backLoading ? (<span className="inline-flex items-center gap-2"><span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" /> Loading...</span>) : ("Back to features")}
+          <Link
+            href="/features"
+            onClick={() => setBackLoading(true)}
+            className="text-sm font-semibold text-slate-600 transition hover:text-sky-700"
+          >
+            {backLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700" /> Loading...
+              </span>
+            ) : (
+              "Back to features"
+            )}
           </Link>
-          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">Local conversion</span>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500 shadow-sm">
+            Local conversion
+          </span>
         </div>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:p-6">
@@ -328,7 +554,9 @@ export function ImageConverterPageClient() {
               >
                 {files.length > 0 ? (
                   <div className="space-y-2">
-                    <span className="text-sm font-semibold text-slate-700">{files.length} image{files.length > 1 ? "s" : ""} loaded</span>
+                    <span className="text-sm font-semibold text-slate-700">
+                      {files.length} image{files.length > 1 ? "s" : ""} loaded
+                    </span>
                     <span className="block text-xs text-slate-500">Drag & drop more or click to replace</span>
                   </div>
                 ) : (
@@ -362,16 +590,7 @@ export function ImageConverterPageClient() {
                     value={format.mimeType}
                     onChange={(event) => {
                       const nextFormat = outputFormats.find((item) => item.mimeType === event.target.value) ?? outputFormats[0];
-                      setFormat(nextFormat);
-                      setConvertedResults([]);
-                      setConvertedBlob(null);
-                      if (convertedUrl) {
-                        URL.revokeObjectURL(convertedUrl);
-                        setConvertedUrl(null);
-                      }
-                      if (currentFile) {
-                        void estimate(currentFile, nextFormat, quality);
-                      }
+                      handleFormatChange(nextFormat);
                     }}
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                   >
@@ -395,17 +614,7 @@ export function ImageConverterPageClient() {
                     value={quality}
                     disabled={!format.supportsQuality}
                     onChange={(event) => {
-                      const nextQuality = Number(event.target.value);
-                      setQuality(nextQuality);
-                      setConvertedResults([]);
-                      setConvertedBlob(null);
-                      if (convertedUrl) {
-                        URL.revokeObjectURL(convertedUrl);
-                        setConvertedUrl(null);
-                      }
-                      if (currentFile) {
-                        void estimate(currentFile, format, nextQuality);
-                      }
+                      handleQualityChange(Number(event.target.value));
                     }}
                     className="mt-3 w-full accent-sky-600 disabled:opacity-40"
                   />
@@ -418,8 +627,10 @@ export function ImageConverterPageClient() {
                       <p className="mt-1 text-lg font-semibold text-slate-950">{currentFile ? formatBytes(currentFile.size) : "-"}</p>
                     </div>
                     <div className="rounded-2xl bg-sky-50 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Estimate</p>
-                      <p className="mt-1 text-lg font-semibold text-sky-950">{estimating ? "..." : estimatedSize ? formatBytes(estimatedSize) : "-"}</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">Converted Size</p>
+                      <p className="mt-1 text-lg font-semibold text-sky-950">
+                        {estimating || converting ? "..." : estimatedSize ? formatBytes(estimatedSize) : "-"}
+                      </p>
                     </div>
                   </div>
                 ) : null}
@@ -430,6 +641,7 @@ export function ImageConverterPageClient() {
                   </div>
                 ) : null}
 
+                {warning ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{warning}</div> : null}
                 {error ? <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
                 {isBulk ? (
@@ -444,11 +656,13 @@ export function ImageConverterPageClient() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => void handleSingleConvert()}
+                    onClick={() => {
+                      if (currentFile) void processSingleConversion(currentFile, format, quality, false);
+                    }}
                     disabled={!currentFile || converting}
                     className="rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {converting ? "Converting..." : `Convert to ${format.label}`}
+                    {converting ? "Converting..." : `Re-convert to ${format.label}`}
                   </button>
                 )}
               </div>
@@ -470,9 +684,8 @@ export function ImageConverterPageClient() {
 
                 <div
                   ref={compareRef}
-                  className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-inner ${
-                    originalUrl && convertedUrl ? "cursor-ew-resize touch-none" : ""
-                  }`}
+                  className="relative aspect-[4/3] max-h-[500px] overflow-hidden rounded-2xl bg-white shadow-inner"
+                  style={{ touchAction: "pan-y" }}
                   onPointerDown={(event) => {
                     if (!originalUrl || !convertedUrl) return;
                     event.currentTarget.setPointerCapture(event.pointerId);
@@ -504,17 +717,34 @@ export function ImageConverterPageClient() {
                     <>
                       <div className="absolute inset-y-0 z-10 w-0.5 bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.2)]" style={{ left: `${comparePosition}%` }} />
                       <div
-                        className="absolute top-1/2 z-20 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize place-items-center rounded-full border border-white bg-slate-950 text-xs font-bold text-white shadow-lg"
+                        role="slider"
+                        tabIndex={0}
+                        aria-label="Image quality comparison slider"
+                        aria-valuenow={Math.round(comparePosition)}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowLeft") setComparePosition((prev) => Math.max(0, prev - 5));
+                          else if (e.key === "ArrowRight") setComparePosition((prev) => Math.min(100, prev + 5));
+                          else if (e.key === "Home") setComparePosition(0);
+                          else if (e.key === "End") setComparePosition(100);
+                        }}
+                        className="absolute top-1/2 z-20 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize place-items-center rounded-full border border-white bg-slate-950 text-xs font-bold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-400"
                         style={{ left: `${comparePosition}%` }}
-                        aria-hidden="true"
                       >
                         ||
                       </div>
-                      <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Original</span>
-                      <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Converted</span>
+                      <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                        Original
+                      </span>
+                      <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">
+                        Converted
+                      </span>
                     </>
                   ) : (
-                    <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">{originalUrl ? "Convert to compare" : "Drop or select an image"}</span>
+                    <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">
+                      {originalUrl ? "Processing preview..." : "Drop or select an image"}
+                    </span>
                   )}
                 </div>
 
@@ -532,13 +762,28 @@ export function ImageConverterPageClient() {
 
             {isBulk && (
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <div className="mb-3">
-                  <h2 className="text-sm font-semibold text-slate-900">{convertedResults.length > 0 ? "Converted Files" : "Images to Convert"}</h2>
-                  <p className="mt-1 text-xs font-medium text-slate-500">
-                    {convertedResults.length > 0
-                      ? `All ${convertedResults.length} images converted to ${format.label}.`
-                      : `${files.length} images will be converted to ${format.label}.`}
-                  </p>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">
+                      {convertedResults.length > 0 ? "Converted Files" : "Images to Convert"}
+                    </h2>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      {convertedResults.length > 0
+                        ? `All ${convertedResults.length} images converted to ${format.label}.`
+                        : `${files.length} images will be converted to ${format.label}.`}
+                    </p>
+                  </div>
+
+                  {convertedResults.some((r) => r.url) ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleDownloadAllZip()}
+                      disabled={zipping}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {zipping ? "Creating ZIP..." : "Download All (.zip)"}
+                    </button>
+                  ) : null}
                 </div>
 
                 {convertedResults.length > 0 ? (
