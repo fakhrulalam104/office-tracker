@@ -3,6 +3,22 @@
 import { useMemo, useState } from "react";
 import { Card, OutputBox, textAreaClass, buttonClass, softButtonClass } from "./shared";
 
+function inferArrayType(arr: unknown[], indent = 0): string {
+  if (arr.length === 0) return "unknown[]";
+  const types = Array.from(
+    new Set(
+      arr.map((item) => {
+        if (typeof item === "object" && item !== null && !Array.isArray(item)) {
+          return jsonToInterface(item, "", indent).trim();
+        }
+        return inferType(item);
+      })
+    )
+  );
+  if (types.length === 1) return `${types[0]}[]`;
+  return `(${types.join(" | ")})[]`;
+}
+
 function jsonToInterface(obj: unknown, name = "Root", indent = 0): string {
   const pad = "  ".repeat(indent);
   const padInner = "  ".repeat(indent + 1);
@@ -11,12 +27,7 @@ function jsonToInterface(obj: unknown, name = "Root", indent = 0): string {
   if (obj === undefined) return `${pad}${name}: undefined;`;
 
   if (Array.isArray(obj)) {
-    if (obj.length === 0) return `${pad}${name}: unknown[];`;
-    const itemType = inferType(obj[0]);
-    if (typeof obj[0] === "object" && obj[0] !== null && !Array.isArray(obj[0])) {
-      return `${pad}${name}: ${jsonToInterface(obj[0], "", indent).trim()}[];`;
-    }
-    return `${pad}${name}: ${itemType}[];`;
+    return `${pad}${name}: ${inferArrayType(obj, indent)};`;
   }
 
   if (typeof obj === "object") {
@@ -28,12 +39,7 @@ function jsonToInterface(obj: unknown, name = "Root", indent = 0): string {
         return jsonToInterface(val, safeKey, indent + 1);
       }
       if (Array.isArray(val)) {
-        if (val.length === 0) return `${padInner}${safeKey}: unknown[];`;
-        if (typeof val[0] === "object" && val[0] !== null && !Array.isArray(val[0])) {
-          const inner = jsonToInterface(val[0], "", indent + 2).trim();
-          return `${padInner}${safeKey}: (${inner})[];`;
-        }
-        return `${padInner}${safeKey}: ${inferType(val[0])}[];`;
+        return `${padInner}${safeKey}: ${inferArrayType(val, indent + 1)};`;
       }
       return `${padInner}${safeKey}: ${inferType(val)};`;
     });

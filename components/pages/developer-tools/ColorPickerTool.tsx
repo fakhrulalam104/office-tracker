@@ -173,11 +173,33 @@ export function ColorPickerTool() {
                 <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)" }} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-3xl font-bold tracking-tight text-slate-950 font-mono">{hex.toUpperCase()}</span>
                   <button type="button" onClick={() => doCopy(hex.toUpperCase(), "preview-hex")} className={`rounded-full px-2 py-1 text-xs font-semibold transition ${copied === "preview-hex" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                     {copied === "preview-hex" ? "Copied!" : "Copy"}
                   </button>
+                  {typeof window !== "undefined" && "EyeDropper" in window && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          // @ts-expect-error EyeDropper API
+                          const dropper = new window.EyeDropper();
+                          const res = await dropper.open();
+                          if (res?.sRGBHex) {
+                            setHex(res.sRGBHex);
+                            setInputValue(res.sRGBHex);
+                            addToHistory(res.sRGBHex);
+                          }
+                        } catch {
+                          // Selection canceled
+                        }
+                      }}
+                      className="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800 transition hover:bg-sky-200"
+                    >
+                      EyeDropper 🎯
+                    </button>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-slate-500">
                   {rgb.r}, {rgb.g}, {rgb.b} · {hsl.h}° {hsl.s}% {hsl.l}%
