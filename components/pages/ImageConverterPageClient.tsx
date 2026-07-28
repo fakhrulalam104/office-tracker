@@ -355,18 +355,6 @@ export function ImageConverterPageClient() {
                 />
               </label>
 
-              {isBulk && files.length > 0 ? (
-                <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">File list</p>
-                  {files.map((f, i) => (
-                    <div key={i} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
-                      <span className="max-w-[180px] truncate font-medium text-slate-800">{f.name}</span>
-                      <span className="ml-2 shrink-0 text-xs text-slate-500">{formatBytes(f.size)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
               <div className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-4">
                 <label className="block">
                   <span className="text-sm font-semibold text-slate-700">Output type</span>
@@ -466,83 +454,126 @@ export function ImageConverterPageClient() {
               </div>
             </div>
 
-            {!isBulk ? (
+            {!isBulk && (
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <>
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-sm font-semibold text-slate-900">Compare Quality</h2>
-                      <p className="mt-1 text-xs font-medium text-slate-500">Original on the left, converted on the right.</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                      <span>{currentFile?.type || "Original"}</span>
-                      <span className="h-1 w-1 rounded-full bg-slate-300" />
-                      <span>{format.label}</span>
-                    </div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">Compare Quality</h2>
+                    <p className="mt-1 text-xs font-medium text-slate-500">Original on the left, converted on the right.</p>
                   </div>
-
-                  <div
-                    ref={compareRef}
-                    className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-inner ${
-                      originalUrl && convertedUrl ? "cursor-ew-resize touch-none" : ""
-                    }`}
-                    onPointerDown={(event) => {
-                      if (!originalUrl || !convertedUrl) return;
-                      event.currentTarget.setPointerCapture(event.pointerId);
-                      updateComparePosition(event.clientX);
-                    }}
-                    onPointerMove={(event) => {
-                      if (!originalUrl || !convertedUrl || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-                      updateComparePosition(event.clientX);
-                    }}
-                    onPointerUp={(event) => {
-                      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                        event.currentTarget.releasePointerCapture(event.pointerId);
-                      }
-                    }}
-                  >
-                    {originalUrl ? (
-                      <img src={originalUrl} alt="Original preview" className="absolute inset-0 h-full w-full object-contain" />
-                    ) : (
-                      <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">Drop or select an image</span>
-                    )}
-
-                    {convertedUrl ? (
-                      <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${comparePosition}%)` }}>
-                        <img src={convertedUrl} alt="Converted preview" className="h-full w-full object-contain" />
-                      </div>
-                    ) : null}
-
-                    {originalUrl && convertedUrl ? (
-                      <>
-                        <div className="absolute inset-y-0 z-10 w-0.5 bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.2)]" style={{ left: `${comparePosition}%` }} />
-                        <div
-                          className="absolute top-1/2 z-20 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize place-items-center rounded-full border border-white bg-slate-950 text-xs font-bold text-white shadow-lg"
-                          style={{ left: `${comparePosition}%` }}
-                          aria-hidden="true"
-                        >
-                          ||
-                        </div>
-                        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Original</span>
-                        <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Converted</span>
-                      </>
-                    ) : (
-                      <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">{originalUrl ? "Convert to compare" : "Drop or select an image"}</span>
-                    )}
+                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                    <span>{currentFile?.type || "Original"}</span>
+                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                    <span>{format.label}</span>
                   </div>
+                </div>
 
-                  {convertedUrl && convertedBlob ? (
-                    <a
-                      href={convertedUrl}
-                      download={convertedFileName}
-                      className="mt-4 block rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-                    >
-                      Download {convertedFileName} ({formatBytes(convertedBlob.size)})
-                    </a>
+                <div
+                  ref={compareRef}
+                  className={`relative aspect-[4/3] overflow-hidden rounded-2xl bg-white shadow-inner ${
+                    originalUrl && convertedUrl ? "cursor-ew-resize touch-none" : ""
+                  }`}
+                  onPointerDown={(event) => {
+                    if (!originalUrl || !convertedUrl) return;
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    updateComparePosition(event.clientX);
+                  }}
+                  onPointerMove={(event) => {
+                    if (!originalUrl || !convertedUrl || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+                    updateComparePosition(event.clientX);
+                  }}
+                  onPointerUp={(event) => {
+                    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                      event.currentTarget.releasePointerCapture(event.pointerId);
+                    }
+                  }}
+                >
+                  {originalUrl ? (
+                    <img src={originalUrl} alt="Original preview" className="absolute inset-0 h-full w-full object-contain" />
+                  ) : (
+                    <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">Drop or select an image</span>
+                  )}
+
+                  {convertedUrl ? (
+                    <div className="absolute inset-0" style={{ clipPath: `inset(0 0 0 ${comparePosition}%)` }}>
+                      <img src={convertedUrl} alt="Converted preview" className="h-full w-full object-contain" />
+                    </div>
                   ) : null}
-                </>
+
+                  {originalUrl && convertedUrl ? (
+                    <>
+                      <div className="absolute inset-y-0 z-10 w-0.5 bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.2)]" style={{ left: `${comparePosition}%` }} />
+                      <div
+                        className="absolute top-1/2 z-20 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize place-items-center rounded-full border border-white bg-slate-950 text-xs font-bold text-white shadow-lg"
+                        style={{ left: `${comparePosition}%` }}
+                        aria-hidden="true"
+                      >
+                        ||
+                      </div>
+                      <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Original</span>
+                      <span className="absolute right-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm">Converted</span>
+                    </>
+                  ) : (
+                    <span className="absolute inset-0 grid place-items-center text-sm font-medium text-slate-400">{originalUrl ? "Convert to compare" : "Drop or select an image"}</span>
+                  )}
+                </div>
+
+                {convertedUrl && convertedBlob ? (
+                  <a
+                    href={convertedUrl}
+                    download={convertedFileName}
+                    className="mt-4 block rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                  >
+                    Download {convertedFileName} ({formatBytes(convertedBlob.size)})
+                  </a>
+                ) : null}
               </div>
-            ) : null}
+            )}
+
+            {isBulk && (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3">
+                  <h2 className="text-sm font-semibold text-slate-900">{convertedResults.length > 0 ? "Converted Files" : "Images to Convert"}</h2>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {convertedResults.length > 0
+                      ? `All ${convertedResults.length} images converted to ${format.label}.`
+                      : `${files.length} images will be converted to ${format.label}.`}
+                  </p>
+                </div>
+
+                {convertedResults.length > 0 ? (
+                  <div className="max-h-[520px] space-y-2 overflow-y-auto">
+                    {convertedResults.map((result, i) => (
+                      <div key={i} className="flex items-center justify-between rounded-2xl bg-white p-3 shadow-sm">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-slate-900">{result.fileName}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {files[i]?.name} &middot; {result.size > 0 ? formatBytes(result.size) : "Error"}
+                          </p>
+                        </div>
+                        {result.url ? (
+                          <a
+                            href={result.url}
+                            download={result.fileName}
+                            className="ml-3 shrink-0 rounded-xl bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                          >
+                            Download
+                          </a>
+                        ) : (
+                          <span className="ml-3 shrink-0 rounded-xl bg-red-100 px-4 py-2 text-xs font-semibold text-red-600">Failed</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-white shadow-inner">
+                    <span className="text-sm font-medium text-slate-400">
+                      {converting ? "Converting..." : "Click bulk convert to start"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
