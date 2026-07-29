@@ -33,7 +33,7 @@ function toPathCase(s: string) {
 }
 
 function toCapitalize(s: string) {
-  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function toSentenceCase(s: string) {
