@@ -27,6 +27,13 @@ const features = [
     icon: "cutout"
   },
   {
+    href: "/features/image-editor",
+    label: "Image Editor",
+    description: "Layer-based photo editor with brush, fill, selections, filters, text, and PNG/JPEG export.",
+    status: "Available",
+    icon: "editor"
+  },
+  {
     href: "/features/notes",
     label: "Notes",
     description: "Keep text notes, links, tags, pinned items, and archived references in one focused workspace.",
@@ -443,6 +450,17 @@ function FeatureIcon({ name }: { name: string }) {
       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
         <path d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5v-9Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
         <path d="M8 16.5 16.5 8M9 8h3M8 9v3M12 17h3M17 12v3" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (name === "editor") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+        <path d="M4 6a2 2 0 0 1 2-2h6l4 4h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+        <path d="M12 6v4h4" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
+        <path d="M8.5 13.5 9 15l1.5.5L9 16l-.5 1.5L8 16l-1.5-.5L8 15l.5-1.5Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.6" />
+        <path d="M13.5 15.5h4M13 18h5" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" />
       </svg>
     );
   }
