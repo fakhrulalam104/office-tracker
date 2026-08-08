@@ -8,3 +8,7 @@ coverage
 *.log
 dist
 tsconfig.tsbuildinfo
+.mimocode
+.dev-data
+PROJECT_STRUCTURE.md
+PROJECT_STRUCTURE_FULL.md
