@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { Card, inputClass, copyText, buttonClass } from "./shared";
-
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
   const n = hex.replace("#", "");
   const r = parseInt(n.slice(0, 2), 16) / 255;
@@ -66,6 +65,7 @@ const harmonyTypes: { key: HarmonyType; label: string }[] = [
 export function ColorPaletteGeneratorTool() {
   const [seed, setSeed] = useState("#0ea5e9");
   const [harmony, setHarmony] = useState<HarmonyType>("analogous");
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const palette = useMemo(() => generateHarmony(seed, harmony), [seed, harmony]);
 
@@ -88,8 +88,8 @@ export function ColorPaletteGeneratorTool() {
         <h2 className="text-lg font-semibold text-slate-950">Generated Palette</h2>
         <div className="mt-4 flex overflow-hidden rounded-2xl border border-slate-200">
           {palette.map((color, i) => (
-            <button key={i} type="button" onClick={() => copyText(color)} className="group relative flex-1 transition hover:flex-[2]" style={{ backgroundColor: color, minHeight: 120 }}>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold opacity-0 shadow transition group-hover:opacity-100">{color}</span>
+            <button key={i} type="button" onClick={() => { copyText(color); setCopiedIndex(i); window.setTimeout(() => setCopiedIndex(null), 1600); }} className="group relative flex-1 transition hover:flex-[2]" style={{ backgroundColor: color, minHeight: 120 }}>
+              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold opacity-0 shadow transition group-hover:opacity-100">{copiedIndex === i ? "✓ Copied" : color}</span>
             </button>
           ))}
         </div>

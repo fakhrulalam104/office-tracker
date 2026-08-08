@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, OutputBox, buttonClass, copyText } from "./shared";
+import { Card, OutputBox, buttonClass, copyText, CopyButton } from "./shared";
 
 const SALT_KEYS = [
   "AUTH_KEY",
@@ -89,13 +89,7 @@ export function WpSaltsGeneratorTool() {
               <code className="flex-1 truncate rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700" title={salts[key]}>
                 {salts[key].substring(0, 32)}...
               </code>
-              <button
-                type="button"
-                onClick={() => copyText(salts[key])}
-                className="text-xs text-sky-700 hover:text-sky-900"
-              >
-                Copy
-              </button>
+              <CopyButton value={salts[key]} label="Copy" copiedLabel="✓ Copied" className="text-xs text-sky-700 hover:text-sky-900" />
             </div>
           ))}
         </div>

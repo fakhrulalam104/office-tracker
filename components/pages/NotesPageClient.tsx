@@ -244,6 +244,7 @@ export function NotesPageClient() {
   const [loaded, setLoaded] = useState(false);
   const [savingState, setSavingState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+const [copiedText, setCopiedText] = useState(false);
   const [showToolbar, setShowToolbar] = useState(true);
   const importRef = useRef<HTMLInputElement | null>(null);
   const saveTimersRef = useRef<Record<string, number>>({});
@@ -478,7 +479,7 @@ export function NotesPageClient() {
 
                 <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto_auto] md:items-center">
                   <input value={selectedNote.tags.join(", ")} onChange={(e) => updateNote(selectedNote.id, { tags: normalizeTags(e.target.value) })} placeholder="Tags separated by commas" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100" />
-                  <button type="button" onClick={() => { const text = new DOMParser().parseFromString(selectedNote.body, "text/html").body.textContent ?? ""; void navigator.clipboard?.writeText(text); }} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Copy text</button>
+                  <button type="button" onClick={() => { const text = new DOMParser().parseFromString(selectedNote.body, "text/html").body.textContent ?? ""; void navigator.clipboard?.writeText(text); setCopiedText(true); window.setTimeout(() => setCopiedText(false), 1600); }} className={"rounded-2xl border px-4 py-3 text-sm font-semibold transition hover:bg-slate-50 " + (copiedText ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-700")}>{copiedText ? "✓ Copied" : "Copy text"}</button>
                   <button type="button" onClick={() => void deleteNote(selectedNote.id)} className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100">Delete</button>
                 </div>
               </>

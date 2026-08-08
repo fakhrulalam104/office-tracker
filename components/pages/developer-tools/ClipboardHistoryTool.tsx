@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, OutputBox, buttonClass, softButtonClass, copyText } from "./shared";
+import { Card, OutputBox, buttonClass, softButtonClass, CopyButton } from "./shared";
 
 type ClipEntry = { id: string; text: string; timestamp: Date };
 
@@ -76,7 +76,7 @@ export function ClipboardHistoryTool() {
             <div className="flex items-start justify-between gap-3">
               <pre className="flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-sm text-slate-800">{entry.text}</pre>
               <div className="flex shrink-0 gap-1">
-                <button type="button" onClick={() => copyText(entry.text)} className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-50">Copy</button>
+                <CopyButton value={entry.text} label="Copy" copiedLabel="✓ Copied" className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 hover:bg-sky-50" />
                 <button type="button" onClick={() => removeEntry(entry.id)} className="rounded-lg px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">Remove</button>
               </div>
             </div>

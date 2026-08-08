@@ -43,6 +43,37 @@ export function Card({ title, children }: { title: string; children: React.React
   );
 }
 
+export function CopyButton({
+  value,
+  label = "Copy",
+  copiedLabel = "✓ Copied",
+  className = "rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50",
+  disabled
+}: {
+  value: string;
+  label?: string;
+  copiedLabel?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        copyText(value);
+        if (!value) return;
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1600);
+      }}
+      className={className + " active:scale-95 disabled:opacity-50 " + (copied ? "!text-emerald-600" : "")}
+    >
+      {copied ? copiedLabel : label}
+    </button>
+  );
+}
+
 export function OutputBox({ value, label = "Output" }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (

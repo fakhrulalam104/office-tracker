@@ -481,12 +481,13 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 function OutputBox({ value, label = "Output" }: { value: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2">
         <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{label}</span>
-        <button type="button" onClick={() => copyText(value)} className="text-xs font-bold text-sky-700 transition hover:text-sky-900">
-          Copy
+        <button type="button" onClick={() => { copyText(value); setCopied(true); window.setTimeout(() => setCopied(false), 1600); }} className={"text-xs font-bold transition active:scale-95 disabled:opacity-50 " + (copied ? "text-emerald-600" : "text-sky-700 hover:text-sky-900")}>
+          {copied ? "✓ Copied" : "Copy"}
         </button>
       </div>
       <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6 text-slate-800">{value || "No output yet."}</pre>
