@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 export const textAreaClass =
   "min-h-56 w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm leading-6 text-slate-800 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100";
 export const inputClass =
@@ -42,12 +44,24 @@ export function Card({ title, children }: { title: string; children: React.React
 }
 
 export function OutputBox({ value, label = "Output" }: { value: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2">
         <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{label}</span>
-        <button type="button" onClick={() => copyText(value)} className="text-xs font-bold text-sky-700 transition hover:text-sky-900">
-          Copy
+        <button
+          type="button"
+          onClick={() => {
+            copyText(value);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1600);
+          }}
+          className={
+            "text-xs font-bold transition active:scale-95 disabled:opacity-50 " +
+            (copied ? "text-emerald-600" : "text-sky-700 hover:text-sky-900")
+          }
+        >
+          {copied ? "✓ Copied" : "Copy"}
         </button>
       </div>
       <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6 text-slate-800">{value || "No output yet."}</pre>

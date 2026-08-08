@@ -64,6 +64,8 @@ const outputTypes: { key: OutputType; label: string }[] = [
 export function LoremIpsumGeneratorTool() {
   const [count, setCount] = useState(5);
   const [type, setType] = useState<OutputType>("paragraphs");
+  const [copied, setCopied] = useState(false);
+  const [downloaded, setDownloaded] = useState(false);
 
   const output = useMemo(() => {
     switch (type) {
@@ -94,8 +96,32 @@ export function LoremIpsumGeneratorTool() {
           </label>
         </div>
         <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => copyText(output)} className={buttonClass}>Copy output</button>
-          <button type="button" onClick={() => { const b = new Blob([output], { type: "text/plain" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "lorem-" + type + ".txt"; a.click(); }} className={softButtonClass}>Download .txt</button>
+          <button
+            type="button"
+            onClick={() => {
+              copyText(output);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1600);
+            }}
+            className={buttonClass + " active:scale-95 disabled:opacity-50 " + (copied ? "bg-emerald-600 hover:bg-emerald-600" : "")}
+          >
+            {copied ? "✓ Copied!" : "Copy output"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const b = new Blob([output], { type: "text/plain" });
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(b);
+              a.download = "lorem-" + type + ".txt";
+              a.click();
+              setDownloaded(true);
+              window.setTimeout(() => setDownloaded(false), 1600);
+            }}
+            className={softButtonClass + " active:scale-95 disabled:opacity-50 " + (downloaded ? "text-emerald-600" : "")}
+          >
+            {downloaded ? "✓ Downloaded" : "Download .txt"}
+          </button>
         </div>
       </Card>
       <OutputBox value={output} label="Generated text" />
