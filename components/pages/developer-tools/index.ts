@@ -1,3 +1,4 @@
+export { DummyCardGeneratorTool } from "./DummyCardGeneratorTool";
 export { PasswordGeneratorTool } from "./PasswordGeneratorTool";
 export { CronParserTool } from "./CronParserTool";
 export { JsonSchemaValidatorTool } from "./JsonSchemaValidatorTool";

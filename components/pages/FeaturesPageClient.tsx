@@ -48,6 +48,13 @@ const features = [
     icon: "tools"
   },
   {
+    href: "/features/dummy-card-generator",
+    label: "Dummy Card Generator",
+    description: "Generate realistic test credit cards with valid-format numbers, CVVs, expiry dates, and cardholder names in a real card view.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
     href: "/features/password-generator",
     label: "Password Generator",
     description: "Generate strength-rated passwords with customizable options.",
