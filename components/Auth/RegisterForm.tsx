@@ -144,12 +144,20 @@ export function RegisterForm() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Sign in
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <Link
+          href="/tools"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+        >
+          Browse Tools
         </Link>
-      </p>
+        <p className="text-sm text-slate-500">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

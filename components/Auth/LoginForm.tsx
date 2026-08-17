@@ -176,12 +176,20 @@ export function LoginForm({ registered }: { registered: boolean }) {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
-        New here?{" "}
-        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Create an account
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <Link
+          href="/tools"
+          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+        >
+          Browse Tools
         </Link>
-      </p>
+        <p className="text-sm text-slate-500">
+          New here?{" "}
+          <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Create an account
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
