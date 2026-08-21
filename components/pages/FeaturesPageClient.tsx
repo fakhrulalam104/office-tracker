@@ -495,6 +495,10 @@ function StarIcon({ filled }: { filled: boolean }) {
   );
 }
 
+function normalizeToolHref(href: string): string {
+  return href.replace(/^\/features\//, "/tools/");
+}
+
 export function FeaturesPageClient() {
   const [loading, setLoading] = useState<string | null>(null);
   const [pinned, setPinned] = useState<Set<string>>(new Set());
@@ -502,29 +506,51 @@ export function FeaturesPageClient() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(pinStorageKey);
-      if (stored) setPinned(new Set(JSON.parse(stored)));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed
+            .map((item) => (typeof item === "string" ? normalizeToolHref(item) : ""))
+            .filter(Boolean);
+          const nextSet = new Set(normalized);
+          setPinned(nextSet);
+          localStorage.setItem(pinStorageKey, JSON.stringify([...nextSet]));
+        }
+      }
     } catch {}
   }, []);
 
   function togglePin(href: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    const target = normalizeToolHref(href);
     setPinned((prev) => {
-      const next = new Set(prev);
-      if (next.has(href)) next.delete(href);
-      else next.add(href);
+      const next = new Set<string>();
+      for (const item of prev) {
+        next.add(normalizeToolHref(item));
+      }
+      if (next.has(target)) {
+        next.delete(target);
+      } else {
+        next.add(target);
+      }
       localStorage.setItem(pinStorageKey, JSON.stringify([...next]));
       return next;
     });
   }
 
+  const isPinnedCheck = (href: string) => {
+    const norm = normalizeToolHref(href);
+    return pinned.has(norm) || pinned.has(href);
+  };
+
   const sorted = [...features].sort((a, b) => {
-    const ap = pinned.has(a.href) ? 0 : 1;
-    const bp = pinned.has(b.href) ? 0 : 1;
+    const ap = isPinnedCheck(a.href) ? 0 : 1;
+    const bp = isPinnedCheck(b.href) ? 0 : 1;
     return ap - bp;
   });
 
-  const pinnedCount = pinned.size;
+  const pinnedCount = features.filter((feature) => isPinnedCheck(feature.href)).length;
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-6 px-4 py-6 lg:px-8">
@@ -540,26 +566,43 @@ export function FeaturesPageClient() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {sorted.map((feature) => {
-          const isPinned = pinned.has(feature.href);
+          const isPinned = isPinnedCheck(feature.href);
           return (
             <Link
               key={feature.href}
               href={feature.href}
               onClick={() => setLoading(feature.href)}
-              className={`group relative rounded-3xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                isPinned ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200 hover:border-sky-200"
+              className={`group relative rounded-3xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                isPinned
+                  ? "border-amber-300 bg-amber-50/40 ring-2 ring-amber-300/60 hover:border-amber-400 hover:ring-amber-400"
+                  : "border-slate-200 bg-white hover:border-sky-200"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <span className={`grid h-12 w-12 place-items-center rounded-2xl text-white ${isPinned ? "bg-amber-500" : "bg-slate-950"}`}>
+                <span
+                  className={`grid h-12 w-12 place-items-center rounded-2xl text-white shadow-sm transition ${
+                    isPinned ? "bg-amber-500 shadow-amber-200" : "bg-slate-950"
+                  }`}
+                >
                   <FeatureIcon name={feature.icon} />
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{feature.status}</span>
+                  {isPinned ? (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                      Pinned
+                    </span>
+                  ) : null}
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    {feature.status}
+                  </span>
                   <button
                     type="button"
                     onClick={(e) => togglePin(feature.href, e)}
-                    className={`rounded-full p-1.5 transition ${isPinned ? "text-amber-500 hover:text-amber-600" : "text-slate-300 hover:text-slate-500"}`}
+                    className={`rounded-full p-1.5 transition ${
+                      isPinned
+                        ? "bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-700"
+                        : "text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+                    }`}
                     title={isPinned ? "Unpin" : "Pin to top"}
                   >
                     <StarIcon filled={isPinned} />
@@ -570,10 +613,18 @@ export function FeaturesPageClient() {
                 <h2 className="text-lg font-semibold text-slate-950">{feature.label}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">{feature.description}</p>
               </div>
-              <div className="mt-6 text-sm font-semibold text-sky-700 transition group-hover:text-sky-800">
+              <div
+                className={`mt-6 text-sm font-semibold transition ${
+                  isPinned ? "text-amber-700 group-hover:text-amber-800" : "text-sky-700 group-hover:text-sky-800"
+                }`}
+              >
                 {loading === feature.href ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-300 border-t-sky-700" />
+                    <span
+                      className={`h-3 w-3 animate-spin rounded-full border-2 ${
+                        isPinned ? "border-amber-300 border-t-amber-700" : "border-sky-300 border-t-sky-700"
+                      }`}
+                    />
                     Loading...
                   </span>
                 ) : (
