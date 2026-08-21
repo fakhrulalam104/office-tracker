@@ -208,6 +208,9 @@ function groupItem(item: Omit<NavGroupItem, "kind">): NavGroupItem {
 }
 
 function isActivePath(pathname: string, href: string) {
+  if (href === "/features" || href === "/tools") {
+    return pathname === "/features" || pathname.startsWith("/features/") || pathname === "/tools" || pathname.startsWith("/tools/");
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -240,6 +243,7 @@ function getNavItemsForRole(role: UserRole): NavItem[] {
           linkItem({ href: "/admin/audit", label: "Audit Log", icon: "shield" })
         ]
       }),
+      linkItem({ href: "/features", label: "Tools", icon: "features" }),
       linkItem({ href: "/profile", label: "Profile", icon: "profile" })
     ];
   }
@@ -412,7 +416,7 @@ export function AppShell({
   }, []);
 
   function startNavigationFeedback(href: string) {
-    if (href === pathname || pathname.startsWith(`${href}/`)) {
+    if (isActivePath(pathname, href)) {
       return;
     }
 
