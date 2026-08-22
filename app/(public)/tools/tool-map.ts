@@ -60,4 +60,12 @@ export const toolComponents: Record<string, React.LazyExoticComponent<React.Comp
   "wp-gitignore-generator": lazy(() => import("@/components/pages/WpGitignoreGeneratorPageClient").then(m => ({ default: m.WpGitignoreGeneratorPageClient }))),
   "wp-rest-api-explorer": lazy(() => import("@/components/pages/WpRestApiExplorerPageClient").then(m => ({ default: m.WpRestApiExplorerPageClient }))),
   "wp-salts-generator": lazy(() => import("@/components/pages/WpSaltsGeneratorPageClient").then(m => ({ default: m.WpSaltsGeneratorPageClient }))),
+  "dns-troubleshooter": lazy(() => import("@/components/pages/DnsTroubleshooterPageClient").then(m => ({ default: m.DnsTroubleshooterPageClient }))),
+  "rdap-lookup": lazy(() => import("@/components/pages/RdapLookupPageClient").then(m => ({ default: m.RdapLookupPageClient }))),
+  "ip-detector": lazy(() => import("@/components/pages/IpDetectorPageClient").then(m => ({ default: m.IpDetectorPageClient }))),
+  "api-debugger": lazy(() => import("@/components/pages/ApiDebuggerPageClient").then(m => ({ default: m.ApiDebuggerPageClient }))),
+  "npm-package-inspector": lazy(() => import("@/components/pages/NpmPackageInspectorPageClient").then(m => ({ default: m.NpmPackageInspectorPageClient }))),
+  "github-repo-analyzer": lazy(() => import("@/components/pages/GithubRepoAnalyzerPageClient").then(m => ({ default: m.GithubRepoAnalyzerPageClient }))),
+  "quickchart-generator": lazy(() => import("@/components/pages/QuickChartGeneratorPageClient").then(m => ({ default: m.QuickChartGeneratorPageClient }))),
+  "web-doctor": lazy(() => import("@/components/pages/WebDoctorPageClient").then(m => ({ default: m.WebDoctorPageClient }))),
 };

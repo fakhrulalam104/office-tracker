@@ -417,6 +417,62 @@ const features = [
     description: "Standard WP permission chart with chmod/chown commands for SSH paste.",
     status: "Available",
     icon: "tools"
+  },
+  {
+    href: "/tools/web-doctor",
+    label: "WebDoctor - Domain Diagnostic Suite",
+    description: "All-in-one technical audit combining Cloudflare DNS, RDAP WHOIS, Network/ASN, and HTTP health checks with scores.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/dns-troubleshooter",
+    label: "Cloudflare DNS Troubleshooter",
+    description: "Real-time DNS-over-HTTPS queries for A, AAAA, MX, TXT, CAA, NS, SRV records with DNSSEC validation.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/rdap-lookup",
+    label: "RDAP Domain, IP & ASN Diagnostic",
+    description: "Modern WHOIS replacement to inspect domain registrar, registration timeline, status codes, and network blocks.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/ip-detector",
+    label: "Public IP & Network Diagnostic",
+    description: "Detect public IPv4/IPv6 address, measure gateway latency, inspect network owner, and generate firewall allowlist rules.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/api-debugger",
+    label: "API Request Debugger (httpbin)",
+    description: "Interactive HTTP client to test REST APIs, methods, auth, headers, payload simulation, and cURL commands.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/npm-package-inspector",
+    label: "npm Package Inspector & Comparator",
+    description: "Inspect package dependencies, license, unpacked size, release history, and compare multiple npm packages.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/github-repo-analyzer",
+    label: "GitHub Repository Analyzer",
+    description: "Analyze GitHub stars, forks, issues, license, languages, commit activity meters, and latest releases.",
+    status: "Available",
+    icon: "tools"
+  },
+  {
+    href: "/tools/quickchart-generator",
+    label: "QuickChart & QR Code Generator",
+    description: "Generate server-rendered QR codes and customizable charts (Bar, Line, Pie, Radar) with live preview and export.",
+    status: "Available",
+    icon: "tools"
   }
 ];
 
