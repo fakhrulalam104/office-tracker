@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useId } from "react";
 import { Card, buttonClass, softButtonClass } from "./shared";
 
-type ThemeType = "aurora" | "tree" | "skyscraper" | "rocket" | "coffee";
+type ThemeType = "classic" | "aurora" | "tree" | "skyscraper" | "rocket" | "coffee";
 type Session = { start: Date; duration: number; type: "work" | "break"; theme: ThemeType };
 
 function formatTime(seconds: number) {
@@ -43,7 +43,65 @@ function playCompletionChime() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                     THEME 0: AESTHETIC LIQUID AURORA                       */
+/*                     THEME 0: MINIMALIST CLASSIC RING                       */
+/* -------------------------------------------------------------------------- */
+function ClassicRingVisual({
+  progress,
+  secondsLeft,
+  isWork,
+}: {
+  progress: number;
+  secondsLeft: number;
+  isWork: boolean;
+}) {
+  const radius = 86;
+  const circumference = 2 * Math.PI * radius; // ~540.35
+  const strokeDashoffset = circumference - progress * circumference;
+
+  return (
+    <div className="relative flex h-full w-full select-none items-center justify-center rounded-3xl bg-white p-4">
+      <svg className="h-56 w-56 -rotate-90 transform" viewBox="0 0 200 200">
+        {/* Background Track Ring */}
+        <circle
+          cx="100"
+          cy="100"
+          r={radius}
+          fill="none"
+          stroke="#f1f5f9"
+          strokeWidth="10"
+        />
+        {/* Animated Progress Ring */}
+        <circle
+          cx="100"
+          cy="100"
+          r={radius}
+          fill="none"
+          stroke={isWork ? "#0ea5e9" : "#10b981"}
+          strokeWidth="10"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.4s ease-out" }}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center text-center">
+        <span className="font-mono text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl tabular-nums">
+          {formatTime(secondsLeft)}
+        </span>
+        <span
+          className={`mt-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+            isWork ? "bg-sky-100 text-sky-800" : "bg-emerald-100 text-emerald-800"
+          }`}
+        >
+          {Math.round(progress * 100)}% Complete
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                     THEME 1: AESTHETIC LIQUID AURORA                       */
 /* -------------------------------------------------------------------------- */
 function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRunning: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -75,11 +133,10 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       size: Math.random() * 2 + 1,
       speed: Math.random() * 0.4 + 0.2,
       seed: Math.random() * Math.PI * 2,
-      hue: Math.random() * 60 + 180, // cyan to magenta
+      hue: Math.random() * 60 + 180,
       opacity: Math.random() * 0.7 + 0.3,
     }));
 
-    // Color lerp helper
     const lerpColor = (r1: number, g1: number, b1: number, r2: number, g2: number, b2: number, t: number) => {
       const r = Math.round(r1 + (r2 - r1) * t);
       const g = Math.round(g1 + (g2 - g1) * t);
@@ -94,7 +151,6 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.clearRect(0, 0, width, height);
 
       // 1. Dynamic Deep Cosmic Background Gradient
-      // Shifts from midnight obsidian (0%) -> electric indigo/violet (50%) -> glowing rose dawn (100%)
       const bgGrad = ctx.createLinearGradient(0, 0, width, height);
       if (currentProgress < 0.5) {
         const t = currentProgress * 2;
@@ -113,13 +169,12 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.roundRect(0, 0, width, height, 24);
       ctx.fill();
 
-      // 2. Liquid Glowing Aurora Mesh Orbs (Harmonic Lissajous curves)
+      // 2. Liquid Glowing Aurora Mesh Orbs
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(0, 0, width, height, 24);
       ctx.clip();
 
-      // Orb 1: Cyan / Electric Teal Wave Center
       const orb1X = width * 0.5 + Math.sin(time * 0.9) * 65;
       const orb1Y = height * 0.55 + Math.cos(time * 1.1) * 45;
       const orb1Radius = 60 + Math.sin(time * 1.4) * 15 + currentProgress * 55;
@@ -133,7 +188,6 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.arc(orb1X, orb1Y, orb1Radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Orb 2: Magenta / Rose Sunset Aura
       const orb2X = width * 0.5 + Math.cos(time * 0.8) * 75;
       const orb2Y = height * 0.45 + Math.sin(time * 1.0) * 40;
       const orb2Radius = 70 + Math.cos(time * 1.2) * 15 + currentProgress * 65;
@@ -147,7 +201,6 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.arc(orb2X, orb2Y, orb2Radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Orb 3: Radiant Golden / Emerald Core (Blooms as progress fills)
       if (currentProgress > 0.2) {
         const pNorm = (currentProgress - 0.2) / 0.8;
         const orb3X = width * 0.5 + Math.sin(time * 1.3) * 35;
@@ -164,10 +217,10 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
         ctx.fill();
       }
 
-      // 3. Harmonic Organic Fluid Waves (Smooth liquid rising like filling a crystal vessel)
+      // 3. Harmonic Organic Fluid Waves
       const liquidLevel = height - (currentProgress * (height * 0.75) + height * 0.12);
 
-      // Layer 1: Back Wave Ribbon (Indigo-Blue)
+      // Layer 1
       ctx.beginPath();
       ctx.moveTo(0, height);
       for (let x = 0; x <= width; x += 4) {
@@ -186,7 +239,7 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.fillStyle = wave1Grad;
       ctx.fill();
 
-      // Layer 2: Mid Wave Ribbon (Cyan-Teal Glow)
+      // Layer 2
       ctx.beginPath();
       ctx.moveTo(0, height);
       for (let x = 0; x <= width; x += 4) {
@@ -207,7 +260,7 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.fillStyle = wave2Grad;
       ctx.fill();
 
-      // Layer 3: Foreground Shimmer Wave (Coral/Rose)
+      // Layer 3
       ctx.beginPath();
       ctx.moveTo(0, height);
       for (let x = 0; x <= width; x += 4) {
@@ -260,14 +313,12 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
       ctx.arc(haloX, haloY, haloRadius * 1.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Sleek Center Glass Energy Ring
       ctx.lineWidth = 2.5;
       ctx.strokeStyle = `rgba(255, 255, 255, ${0.4 + currentProgress * 0.5})`;
       ctx.beginPath();
       ctx.arc(haloX, haloY, haloRadius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Spinning Orbit Ring Marker
       const markerAngle = time * 2.5;
       const markerX = haloX + Math.cos(markerAngle) * haloRadius;
       const markerY = haloY + Math.sin(markerAngle) * haloRadius;
@@ -304,7 +355,7 @@ function AestheticAuroraVisual({ progress, isRunning }: { progress: number; isRu
 }
 
 /* -------------------------------------------------------------------------- */
-/*                               THEME 1: TREE                                */
+/*                               THEME 2: TREE                                */
 /* -------------------------------------------------------------------------- */
 function TreeVisual({ progress }: { progress: number }) {
   const isBloom = progress >= 0.95;
@@ -466,7 +517,7 @@ function TreeVisual({ progress }: { progress: number }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            THEME 2: SKYSCRAPER                             */
+/*                            THEME 3: SKYSCRAPER                             */
 /* -------------------------------------------------------------------------- */
 function SkyscraperVisual({ progress }: { progress: number }) {
   const isComplete = progress >= 0.95;
@@ -595,7 +646,7 @@ function SkyscraperVisual({ progress }: { progress: number }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                             THEME 3: ROCKET                                */
+/*                             THEME 4: ROCKET                                */
 /* -------------------------------------------------------------------------- */
 function RocketVisual({ progress }: { progress: number }) {
   const isBlastoff = progress >= 0.95;
@@ -720,7 +771,7 @@ function RocketVisual({ progress }: { progress: number }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                             THEME 4: COFFEE                                */
+/*                             THEME 5: COFFEE                                */
 /* -------------------------------------------------------------------------- */
 function CoffeeVisual({ progress }: { progress: number }) {
   const isComplete = progress >= 0.95;
@@ -835,7 +886,7 @@ function CoffeeVisual({ progress }: { progress: number }) {
 /*                           MAIN TOOL COMPONENT                              */
 /* -------------------------------------------------------------------------- */
 export function PomodoroTimerTool() {
-  const [theme, setTheme] = useState<ThemeType>("aurora");
+  const [theme, setTheme] = useState<ThemeType>("classic");
   const [workMinutes, setWorkMinutes] = useState(25);
   const [breakMinutes, setBreakMinutes] = useState(5);
   const [longBreakMinutes, setLongBreakMinutes] = useState(15);
@@ -937,6 +988,10 @@ export function PomodoroTimerTool() {
   const getStageDescription = () => {
     if (!isWork) return "☕ Break Time — Relax and recharge!";
 
+    if (theme === "classic") {
+      return `⏱️ ${isWork ? "Focus Session" : "Break"} • ${progressPercent}% elapsed`;
+    }
+
     if (theme === "aurora") {
       if (progress < 0.25) return "🌌 Deep Cosmic Silence: Midnight harmonic resonance...";
       if (progress < 0.5) return "✨ Indigo & Cyan Wave: Harmonic fluid streams expanding...";
@@ -982,6 +1037,7 @@ export function PomodoroTimerTool() {
 
   const getThemeIcon = (t: ThemeType) => {
     switch (t) {
+      case "classic": return "⏱️";
       case "aurora": return "🌌";
       case "tree": return "🌲";
       case "skyscraper": return "🏙️";
@@ -992,9 +1048,9 @@ export function PomodoroTimerTool() {
 
   return (
     <div className="space-y-6">
-      <Card title="Visual Builder Pomodoro Timer">
+      <Card title="Pomodoro Focus Timer">
         <p className="text-sm text-slate-600 mb-5">
-          Stay focused while watching your creation assemble in real-time. Choose your theme, start your 25-minute focus session, and watch a silky liquid aurora bloom, a tree flourish, skyscraper rise, rocket launch, or coffee brew!
+          Stay productive and structured with flexible timer themes. Choose the classic countdown ring, an aesthetic fluid aurora mesh, or watch trees, skyscrapers, rockets, and coffee assemble as you focus!
         </p>
 
         {/* Theme Picker Selector */}
@@ -1002,11 +1058,12 @@ export function PomodoroTimerTool() {
           <div className="flex flex-wrap gap-2">
             {(
               [
-                { id: "aurora", label: "🌌 Liquid Aurora", desc: "Aesthetic Fluid Mesh" },
-                { id: "tree", label: "🌲 Bonsai Tree", desc: "Sprout -> Bloom" },
-                { id: "skyscraper", label: "🏙️ Skyscraper", desc: "Foundation -> Tower" },
-                { id: "rocket", label: "🚀 Rocket Launch", desc: "Gantry -> Blastoff" },
-                { id: "coffee", label: "☕ Cozy Coffee", desc: "Grind -> Latte Art" },
+                { id: "classic", label: "⏱️ Classic Ring" },
+                { id: "aurora", label: "🌌 Liquid Aurora" },
+                { id: "tree", label: "🌲 Bonsai Tree" },
+                { id: "skyscraper", label: "🏙️ Skyscraper" },
+                { id: "rocket", label: "🚀 Rocket Launch" },
+                { id: "coffee", label: "☕ Cozy Coffee" },
               ] as const
             ).map((t) => (
               <button
@@ -1049,12 +1106,13 @@ export function PomodoroTimerTool() {
               </span>
 
               <span className="font-mono text-xs font-bold text-slate-500">
-                {progressPercent}% Built
+                {progressPercent}% Elapsed
               </span>
             </div>
 
-            {/* Visual Canvas */}
-            <div className="my-4 h-64 w-full max-w-[340px] overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-950 p-1.5 shadow-inner">
+            {/* Visual Canvas Container */}
+            <div className="my-4 h-64 w-full max-w-[340px] overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-inner flex items-center justify-center">
+              {theme === "classic" && <ClassicRingVisual progress={progress} secondsLeft={secondsLeft} isWork={isWork} />}
               {theme === "aurora" && <AestheticAuroraVisual progress={progress} isRunning={running} />}
               {theme === "tree" && <TreeVisual progress={progress} />}
               {theme === "skyscraper" && <SkyscraperVisual progress={progress} />}
@@ -1062,14 +1120,16 @@ export function PomodoroTimerTool() {
               {theme === "coffee" && <CoffeeVisual progress={progress} />}
             </div>
 
-            {/* Stage description message */}
+            {/* Stage description message & Digital Display */}
             <div className="text-center">
               <p className="font-medium text-xs text-slate-600 animate-pulse">
                 {getStageDescription()}
               </p>
-              <div className="font-mono text-4xl font-extrabold tracking-tight text-slate-900 mt-2 sm:text-5xl select-all">
-                {formatTime(secondsLeft)}
-              </div>
+              {theme !== "classic" && (
+                <div className="font-mono text-4xl font-extrabold tracking-tight text-slate-900 mt-2 sm:text-5xl select-all">
+                  {formatTime(secondsLeft)}
+                </div>
+              )}
             </div>
 
             {/* Controls */}
@@ -1176,7 +1236,7 @@ export function PomodoroTimerTool() {
               {builtCollection.length > 0 && (
                 <div className="pt-2 border-t border-slate-100">
                   <span className="text-xs font-bold text-slate-700 block mb-2">
-                    Today&apos;s Creations ({builtCollection.length})
+                    Today&apos;s Sessions ({builtCollection.length})
                   </span>
                   <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                     {builtCollection.map((item) => (
